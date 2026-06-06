@@ -1,0 +1,12 @@
+{% load static %}
+<nav class="bg-gray-800 p-4 flex items-center justify-between">
+  <div class="flex items-center space-x-4">
+    <a href="/" class="text-white text-xl font-semibold">SGE</a>
+  </div>
+  <div class="flex items-center space-x-4">
+    {% if user.is_authenticated %}
+    {% else %}
+      <a href="/login/" class="text-gray-300 hover:text-white">Login</a>
+    {% endif %}
+  </div>
+</nav>
