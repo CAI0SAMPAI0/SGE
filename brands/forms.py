@@ -15,3 +15,4 @@ class BrandForm(forms.ModelForm):
             'name': 'Nome',
             'description': 'Descrição',
         }
+        

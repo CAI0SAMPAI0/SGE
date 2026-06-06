@@ -1,9 +1,8 @@
 import json
 from django.conf import settings
 from django.core import serializers
-from ai import models
 from openai import OpenAI
-from ai import prompts
+from ai import prompts, models
 from products.models import Product
 from outflows.models import Outflow
 

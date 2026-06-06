@@ -1,4 +1,3 @@
-from . import forms, models
 from rest_framework import generics
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.urls import reverse_lazy
@@ -6,7 +5,7 @@ from django.views.generic import ListView, CreateView, DetailView, UpdateView, D
 from app import metrics
 from brands.models import Brand
 from categories.models import Category
-from . import serializers
+from . import models, forms, serializers
 
 
 class ProductListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
