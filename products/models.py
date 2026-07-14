@@ -1,6 +1,7 @@
 from django.db import models
 from categories.models import Category
 from brands.models import Brand
+from tenants.models import Tenant
 
 
 class Product(models.Model):
@@ -14,6 +15,13 @@ class Product(models.Model):
     quantity = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    tenant = models.ForeignKey(
+        Tenant,
+        on_delete=models.CASCADE,
+        related_name='products',
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         ordering = ['title']

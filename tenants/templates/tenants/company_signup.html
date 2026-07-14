@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}SGE - Cadastrar Empresa{% endblock %}
+
+{% block login_content %}
+<div class="auth-main">
+    <div class="auth-wrapper">
+        <div class="auth-side-card">
+            <div class="auth-side-content">
+                <span class="logo logo-lg fw-bold fs-3 text-primary">SGE</span>
+                <h2 class="mt-4 text-dark fw-bolder">Crie a conta da sua empresa</h2>
+                <p class="fs-13 text-dark mt-3">Gerencie estoque, vendas e tenha insights com IA. Multi-empresa, convide seus funcionarios.</p>
+            </div>
+        </div>
+        <div class="auth-form-card">
+            <div class="card stretch stretch-full">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <span class="logo logo-lg fw-bold fs-3 text-primary">SGE</span>
+                        <h4 class="mt-3 fw-bold text-dark">Cadastro de Empresa</h4>
+                        <p class="fs-13 text-muted">Preencha os dados para criar sua conta</p>
+                    </div>
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %}">{{ message }}</div>
+                    {% endfor %}
+                    {% endif %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nome da Empresa</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="feather-briefcase"></i></span>
+                                <input type="text" class="form-control" name="company_name" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Nome</label>
+                                <input type="text" class="form-control" name="first_name">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Sobrenome</label>
+                                <input type="text" class="form-control" name="last_name">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Usuario</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="feather-user"></i></span>
+                                <input type="text" class="form-control" name="username" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="feather-at-sign"></i></span>
+                                <input type="email" class="form-control" name="email" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Senha</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="feather-lock"></i></span>
+                                <input type="password" class="form-control" name="password" required>
+                            </div>
+                        </div>
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary"><i class="feather-plus me-2"></i>Criar Empresa</button>
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="{% url 'login' %}" class="fs-13 text-primary">Ja tem conta? Entrar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    .auth-main { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bs-body-bg, #f7f8fa); padding: 2rem 1rem; }
+    .auth-wrapper { display: flex; max-width: 840px; width: 100%; border-radius: 1rem; overflow: hidden; box-shadow: 0 0 40px rgba(0,0,0,.08); }
+    .auth-side-card { flex: 1; background: linear-gradient(135deg, #4a6cf7 0%, #1a3358 100%); color: #fff; padding: 3rem; display: flex; align-items: center; min-height: 420px; }
+    .auth-side-card .logo { color: #fff !important; }
+    .auth-side-card h2 { color: #fff; }
+    .auth-side-card p { color: rgba(255,255,255,.85); }
+    .auth-form-card { flex: 1; background: var(--bs-card-bg, #fff); display: flex; align-items: center; }
+    .auth-form-card .card { width: 100%; border: none; background: transparent; }
+    @media (max-width: 767px) { .auth-wrapper { flex-direction: column; } .auth-side-card { display: none; } }
+</style>
+{% endblock %}

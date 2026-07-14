@@ -7,8 +7,10 @@ from products.models import Product
 from outflows.models import Outflow
 
 
-def get_product_metrics():
+def get_product_metrics(tenant=None):
     products = Product.objects.all()
+    if tenant:
+        products = products.filter(tenant=tenant)
     total_cost_price = sum(product.cost_price * product.quantity for product in products)
     total_selling_price = sum(product.selling_price * product.quantity for product in products)
     total_quantity = sum(product.quantity for product in products)
@@ -22,11 +24,15 @@ def get_product_metrics():
     )
 
 
-def get_sales_metrics():
-    total_sales = Outflow.objects.count()
-    total_products_sold = Outflow.objects.aggregate(total_products_sold=Sum('quantity'))['total_products_sold'] or 0
-    total_sales_value = sum(outflow.quantity * outflow.product.selling_price for outflow in Outflow.objects.all())
-    total_sales_cost = sum(outflow.quantity * outflow.product.cost_price for outflow in Outflow.objects.all())
+def get_sales_metrics(tenant=None):
+    qs = Outflow.objects.all()
+    if tenant:
+        qs = qs.filter(tenant=tenant)
+    total_sales = qs.count()
+    total_products_sold = qs.aggregate(total_products_sold=Sum('quantity'))['total_products_sold'] or 0
+    outflows = qs.select_related('product')
+    total_sales_value = sum(o.quantity * o.product.selling_price for o in outflows)
+    total_sales_cost = sum(o.quantity * o.product.cost_price for o in outflows)
     total_sales_profit = total_sales_value - total_sales_cost
 
     return dict(
@@ -37,13 +43,17 @@ def get_sales_metrics():
     )
 
 
-def get_daily_sales_data():
+def get_daily_sales_data(tenant=None):
     today = timezone.now().date()
     dates = [str(today - timezone.timedelta(days=i)) for i in range(6, -1, -1)]
     values = list()
 
+    qs = Outflow.objects.all()
+    if tenant:
+        qs = qs.filter(tenant=tenant)
+
     for date in dates:
-        sales_total = Outflow.objects.filter(
+        sales_total = qs.filter(
             created_at__date=date
         ).aggregate(
             total_sales=Sum(F('product__selling_price') * F('quantity'))
@@ -56,13 +66,17 @@ def get_daily_sales_data():
     )
 
 
-def get_daily_sales_quantity_data():
+def get_daily_sales_quantity_data(tenant=None):
     today = timezone.now().date()
     dates = [str(today - timezone.timedelta(days=i)) for i in range(6, -1, -1)]
     quantities = list()
 
+    qs = Outflow.objects.all()
+    if tenant:
+        qs = qs.filter(tenant=tenant)
+
     for date in dates:
-        sales_quantity = Outflow.objects.filter(created_at__date=date).count()
+        sales_quantity = qs.filter(created_at__date=date).count()
         quantities.append(sales_quantity)
 
     return dict(
@@ -71,11 +85,15 @@ def get_daily_sales_quantity_data():
     )
 
 
-def get_graphic_product_category_metric():
+def get_graphic_product_category_metric(tenant=None):
     categories = Category.objects.all()
-    return {category.name: Product.objects.filter(category=category).count() for category in categories}
+    if tenant:
+        categories = categories.filter(tenant=tenant)
+    return {c.name: Product.objects.filter(category=c).count() for c in categories}
 
 
-def get_graphic_product_brand_metric():
+def get_graphic_product_brand_metric(tenant=None):
     brands = Brand.objects.all()
-    return {brand.name: Product.objects.filter(brand=brand).count() for brand in brands}
+    if tenant:
+        brands = brands.filter(tenant=tenant)
+    return {b.name: Product.objects.filter(brand=b).count() for b in brands}

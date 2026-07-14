@@ -1,18 +1,37 @@
 {% extends 'base.html' %}
-
+{% load widget_tweaks %}
+{% block title %}SGE - Cadastrar Marca{% endblock %}
+{% block page_title %}Cadastrar Marca{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'brand_list' %}">Marcas</a></li>
+    <li class="breadcrumb-item">Cadastrar</li>
+{% endblock %}
 {% block content %}
-  <div class="container mt-4">
-    <h3 class="display-4">Cadastrar Marca</h3>
-
-    <div class="card">
-      <div class="card-body">
-        <form method="post" class="form">
-          {% csrf_token %}
-          {{ form.as_p }}
-          <button type="submit" class="btn btn-primary">Salvar Marca</button>
-        </form>
-      </div>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card stretch stretch-full">
+            <div class="card-header">
+                <h5 class="card-title"><i class="feather-tag me-2"></i>Cadastrar Marca</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {% render_field field class="form-control" %}
+                        {% if field.errors %}<div class="text-danger fs-12 mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                        {% if field.help_text %}<div class="text-muted fs-11 mt-1">{{ field.help_text }}</div>{% endif %}
+                    </div>
+                    {% endfor %}
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary"><i class="feather-save me-2"></i>Salvar</button>
+                        <a href="{% url 'brand_list' %}" class="btn btn-light-brand"><i class="feather-arrow-left me-2"></i>Voltar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-    <a href="{% url 'brand_list' %}" class="btn btn-secondary mt-3">Cancelar e Voltar para a Lista de Marcas</a>
-  </div>
+</div>
 {% endblock %}

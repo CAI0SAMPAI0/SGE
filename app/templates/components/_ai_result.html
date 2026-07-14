@@ -1,15 +1,57 @@
-<div class="accordion" id="accordionExample">
-  <div class="accordion-item">
-    <h2 class="accordion-header">
-      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo"
-        aria-expanded="false" aria-controls="collapseTwo">
-        SGE Agent
-      </button>
-    </h2>
-    <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
-      <div class="accordion-body">
-        {{ ai_result|linebreaks }}
-      </div>
+<div class="card stretch stretch-full mb-4">
+    <div class="card-header">
+        <h5 class="card-title">
+            <i class="feather-cpu me-2"></i>SGE Agent
+        </h5>
+        <div class="card-header-right">
+            <button id="sgeReloadBtn" type="button"
+                    class="btn btn-sm btn-light-brand"
+                    title="Gerar novo insight"
+                    onclick="window.SGEReloadAgent(this)">
+                <i class="feather-refresh-cw me-1"></i>
+                <span>Atualizar</span>
+            </button>
+        </div>
     </div>
-  </div>
+    <div class="card-body">
+        <div id="sgeAgentResult" class="markdown-body" data-md>{{ ai_result|default:"Nenhum insight disponível. Clique em **Atualizar** para gerar um relatório." }}</div>
+    </div>
 </div>
+
+<script>
+    (function () {
+        function renderResult(text) {
+            var el = document.getElementById('sgeAgentResult');
+            if (!el) return;
+            if (!window.marked) { el.textContent = text; return; }
+            el.innerHTML = window.marked.parse(text);
+        }
+        window.SGEReloadAgent = function (btn) {
+            if (!btn) return;
+            var original = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="feather-loader me-1"></i>Gerando...';
+            fetch('{% url "ai:ai_reload" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '',
+                    'Accept': 'application/json',
+                },
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data && data.result) renderResult(data.result);
+                    else if (data && data.error) alert(data.error);
+                })
+                .catch(function () { alert('Falha ao contatar o SGE Agent.'); })
+                .finally(function () {
+                    btn.disabled = false;
+                    btn.innerHTML = original;
+                });
+        };
+        document.addEventListener('DOMContentLoaded', function () {
+            var el = document.getElementById('sgeAgentResult');
+            if (el) renderResult(el.textContent);
+        });
+    })();
+</script>

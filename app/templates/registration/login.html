@@ -1,44 +1,116 @@
 {% extends 'base.html' %}
-{% block title %}Login{% endblock %}
+{% load static %}
 
-{% block content %}
-<div class="container mt-5">
-  <div class="row justify-content-center">
-    <div class="col-md-6">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title text-center mb-4">Login</h5>
-          <form method="post">
-            {% csrf_token %}
-            <div class="mb-3">
-              <label for="username" class="form-label">Usuário</label>
-              <input type="text" class="form-control" id="username" name="username" required>
+{% block title %}SGE &mdash; Login{% endblock %}
+
+{% block login_content %}
+<div class="auth-main">
+    <div class="auth-wrapper">
+        <div class="auth-side-card">
+            <div class="auth-side-content">
+                <span class="logo logo-lg fw-bold fs-3 text-primary">SGE</span>
+                <h2 class="mt-4 text-dark fw-bolder">Sistema de Gestão de Estoque</h2>
+                <p class="fs-13 text-dark mt-3">Gerencie produtos, entradas, saídas e tenha insights inteligentes com IA.</p>
             </div>
-            <div class="mb-3">
-              <label for="password" class="form-label">Senha</label>
-              <input type="password" class="form-control" id="password" name="password" required>
-            </div>
-            <div class="d-grid gap-2">
-              <button type="submit" class="btn btn-primary">Entrar</button>
-            </div>
-          </form>
-          {% if form.errors %}
-            <div class="alert alert-danger mt-4">
-              <ul class="mb-0">
-                {% for field in form %}
-                  {% for error in field.errors %}
-                    <li>{{ error }}</li>
-                  {% endfor %}
-                {% endfor %}
-                {% for error in form.non_field_errors %}
-                  <li>{{ error }}</li>
-                {% endfor %}
-              </ul>
-            </div>
-          {% endif %}
         </div>
-      </div>
+        <div class="auth-form-card">
+            <div class="card stretch stretch-full">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <span class="logo logo-lg fw-bold fs-3 text-primary">SGE</span>
+                        <h4 class="mt-3 fw-bold text-dark">Bem-vindo</h4>
+                        <p class="fs-13 text-muted">Faça login para continuar</p>
+                    </div>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label" for="username">Usuário</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="feather-user"></i></span>
+                                <input type="text" class="form-control" id="username" name="username" placeholder="seu.usuario" required autofocus>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="password">Senha</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="feather-lock"></i></span>
+                                <input type="password" class="form-control" id="password" name="password" placeholder="********" required>
+                            </div>
+                        </div>
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="feather-log-in me-2"></i>
+                                <span>Entrar</span>
+                            </button>
+                        </div>
+                    </form>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'tenants:company_signup' %}" class="fs-13 text-primary">Criar conta empresarial</a>
+                    </div>
+                    {% if form.errors %}
+                        <div class="alert alert-soft-danger mt-4 mb-0">
+                            <ul class="mb-0 list-unstyled">
+                                {% for field in form %}
+                                    {% for error in field.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
+
+<style>
+    .auth-main {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bs-body-bg, #f7f8fa);
+        padding: 2rem 1rem;
+    }
+    .auth-wrapper {
+        display: flex;
+        max-width: 840px;
+        width: 100%;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 0 40px rgba(0,0,0,.08);
+    }
+    .auth-side-card {
+        flex: 1;
+        background: linear-gradient(135deg, #4a6cf7 0%, #1a3358 100%);
+        color: #fff;
+        padding: 3rem;
+        display: flex;
+        align-items: center;
+        position: relative;
+        min-height: 420px;
+    }
+    .auth-side-card .logo { color: #fff !important; }
+    .auth-side-card h2 { color: #fff; }
+    .auth-side-card p { color: rgba(255,255,255,.85); }
+    .auth-form-card {
+        flex: 1;
+        background: var(--bs-card-bg, #fff);
+        display: flex;
+        align-items: center;
+    }
+    .auth-form-card .card {
+        width: 100%;
+        border: none;
+        background: transparent;
+    }
+    @media (max-width: 767px) {
+        .auth-wrapper { flex-direction: column; }
+        .auth-side-card { display: none; }
+    }
+</style>
 {% endblock %}

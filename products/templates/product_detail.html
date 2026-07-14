@@ -1,22 +1,73 @@
 {% extends 'base.html' %}
 
+{% block title %}SGE - Detalhes do Produto{% endblock %}
+{% block page_title %}Detalhes do Produto{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'product_list' %}">Produtos</a></li>
+    <li class="breadcrumb-item">{{ object.title }}</li>
+{% endblock %}
+
+{% block page_actions %}
+    {% if perms.products.change_product %}
+    <a href="{% url 'product_update' object.id %}" class="btn btn-light-brand"><i class="feather-edit-2 me-2"></i>Editar</a>
+    {% endif %}
+    <a href="{% url 'product_list' %}" class="btn btn-light-brand"><i class="feather-arrow-left me-2"></i>Voltar</a>
+{% endblock %}
+
 {% block content %}
-  <div class="container mt-4">
-    <h3 class="display-4">Detalhes do Produto</h3>
-
-    <div class="card">
-      <div class="card-body">
-        <h3 class="card-title">{{ object.title }}</h3>
-        <p class="card-text">Categoria: {{ object.category }}</p>
-        <p class="card-text">Marca: {{ object.brand }}</p>
-        <p class="card-text">{{ object.description }}</p>
-        <p class="card-text">Número de Série: <strong>{{ object.serie_number }}</strong></p>
-        <p class="card-text">Preço de Custo: <strong>R$ {{ object.cost_price }}</strong></p>
-        <p class="card-text">Preço de Venda: <strong>R$ {{ object.selling_price }}</strong></p>
-        <p class="card-text">Quantidade em Estoque: <strong>{{ object.quantity }}</strong></p>
-      </div>
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card stretch stretch-full">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <div class="avatar-text avatar-md bg-soft-primary text-primary me-3">
+                        <i class="feather-box"></i>
+                    </div>
+                    <h5 class="card-title mb-0">{{ object.title }}</h5>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr><th class="w-25 text-muted fs-12">Categoria</th><td>{{ object.category }}</td></tr>
+                            <tr><th class="text-muted fs-12">Marca</th><td>{{ object.brand }}</td></tr>
+                            <tr><th class="text-muted fs-12">N de Serie</th><td>{{ object.serie_number|default:"-" }}</td></tr>
+                            <tr><th class="text-muted fs-12">Preco de Custo</th><td><strong>R$ {{ object.cost_price }}</strong></td></tr>
+                            <tr><th class="text-muted fs-12">Preco de Venda</th><td><strong>R$ {{ object.selling_price }}</strong></td></tr>
+                            <tr>
+                                <th class="text-muted fs-12">Estoque</th>
+                                <td>
+                                    {% if object.quantity <= 5 %}
+                                    <span class="badge bg-soft-danger text-danger">{{ object.quantity }}</span>
+                                    {% else %}
+                                    <span class="badge bg-soft-success text-success">{{ object.quantity }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% if object.description %}
+                            <tr><th class="text-muted fs-12">Descricao</th><td>{{ object.description }}</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <a href="{% url 'product_list' %}" class="btn btn-secondary mt-3">Voltar para a Lista de Produtos</a>
-  </div>
+    <div class="col-lg-4">
+        <div class="card stretch stretch-full">
+            <div class="card-header"><h5 class="card-title">Acoes</h5></div>
+            <div class="card-body d-flex flex-column gap-2">
+                {% if perms.products.change_product %}
+                <a href="{% url 'product_update' object.id %}" class="btn btn-light-brand"><i class="feather-edit-2 me-2"></i>Editar</a>
+                {% endif %}
+                {% if perms.products.delete_product %}
+                <a href="{% url 'product_delete' object.id %}" class="btn btn-soft-danger"><i class="feather-trash-2 me-2"></i>Excluir</a>
+                {% endif %}
+                <a href="{% url 'ai:chat' %}" class="btn btn-light-brand"><i class="feather-message-circle me-2"></i>Perguntar a IA</a>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

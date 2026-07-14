@@ -1,79 +1,145 @@
-<div class="row flex-nowrap">
-  <div class="col-auto col-md-0 col-xl-0 px-0 bg-dark">
-    <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-2 text-white">
-      <button class="btn btn-dark d-block d-sm-none mb-3" type="button" data-bs-toggle="collapse"
-        data-bs-target="#menuCollapse" aria-expanded="false" aria-controls="menuCollapse">
-        <i class="bi bi-list fs-4"></i>
-      </button>
-      <div class="collapse d-sm-block" id="menuCollapse">
-        <ul class="nav flex-column align-items-start" id="menu">
-          <li>
-            <a href="{% url 'home' %}" class="nav-link px-0 align-middle">
-              <i class="bi bi-speedometer2 fs-4"></i>
-              <span class="ms-1">Dashboard</span>
+{% load static %}
+<nav class="nxl-navigation">
+    <div class="navbar-wrapper">
+        <div class="m-header">
+            <a href="{% url 'home' %}" class="b-brand">
+                <span class="logo logo-lg fw-bold fs-5 text-primary">SGE</span>
+                <span class="logo logo-sm fw-bold text-primary">S</span>
             </a>
-          </li>
-          {% if perms.suppliers.view_supplier %}
-            <li>
-              <a href="{% url 'supplier_list' %}" class="nav-link px-0 align-middle">
-                <i class="bi bi-truck fs-4"></i>
-                <span class="ms-1">Fornecedores</span>
-              </a>
-            </li>
-          {% endif %}
-          {% if perms.brands.view_brand %}
-            <li>
-              <a href="{% url 'brand_list' %}" class="nav-link px-0 align-middle">
-                <i class="bi bi-shop fs-4"></i>
-                <span class="ms-1">Marcas</span>
-              </a>
-            </li>
-          {% endif %}
-          {% if perms.categories.view_category %}
-            <li>
-              <a href="{% url 'category_list' %}" class="nav-link px-0 align-middle">
-                <i class="bi bi-tags fs-4"></i>
-                <span class="ms-1">Categorias</span>
-              </a>
-            </li>
-          {% endif %}
-          {% if perms.products.view_product %}
-            <li>
-              <a href="{% url 'product_list' %}" class="nav-link px-0 align-middle">
-                <i class="bi bi-box-seam fs-4"></i>
-                <span class="ms-1">Produtos</span>
-              </a>
-            </li>
-          {% endif %}
-          {% if perms.inflows.view_inflow %}
-            <li>
-              <a href="{% url 'inflow_list' %}" class="nav-link px-0 align-middle">
-                <i class="bi bi-arrow-down-left-square fs-4"></i>
-                <span class="ms-1">Entradas</span>
-              </a>
-            </li>
-          {% endif %}
-          {% if perms.outflows.view_outflow %}
-            <li>
-              <a href="{% url 'outflow_list' %}" class="nav-link px-0 align-middle">
-                <i class="bi bi-arrow-up-right-square fs-4"></i>
-                <span class="ms-1">Saídas</span>
-              </a>
-            </li>
-          {% endif %}
-          <li class="nav-item">
-            {% if user.is_authenticated %}
-            <form action="{% url 'logout' %}" method="post" id="logout-form" class="nav-link px-0 align-middle">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-link text-decoration-none text-reset nav-link px-0 align-middle">
-                <i class="bi bi-box-arrow-right fs-4 align-middle"></i>
-                <span class="ms-1 align-middle">Sair</span>
-              </button>
-            </form>
-            {% endif %}
-          </li>
-        </ul>
-      </div>
-      <hr>
+        </div>
+        <div class="navbar-content">
+            <ul class="nxl-navbar">
+                <li class="nxl-item nxl-caption">
+                    <label>Navegação</label>
+                </li>
+                <li class="nxl-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                    <a href="{% url 'home' %}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-airplay"></i></span>
+                        <span class="nxl-mtext">Dashboard</span>
+                    </a>
+                </li>
+
+                <li class="nxl-item nxl-caption">
+                    <label>Inteligência Artificial</label>
+                </li>
+                <li class="nxl-item {% if request.resolver_match.app_name == 'ai' and request.resolver_match.url_name == 'chat' %}active{% endif %}">
+                    <a href="{% url 'ai:chat' %}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-message-circle"></i></span>
+                        <span class="nxl-mtext">SGE Agent</span>
+                    </a>
+                </li>
+                <li class="nxl-item {% if request.resolver_match.app_name == 'ai' and request.resolver_match.url_name == 'ia_history' %}active{% endif %}">
+                    <a href="{% url 'ai:ia_history' %}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-cpu"></i></span>
+                        <span class="nxl-mtext">Histórico IA</span>
+                    </a>
+                </li>
+
+                <li class="nxl-item nxl-caption">
+                    <label>Cadastros</label>
+                </li>
+                <li class="nxl-item nxl-hasmenu {% if request.resolver_match.app_name == 'products' %}active open{% endif %}">
+                    <a href="javascript:void(0);" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-box"></i></span>
+                        <span class="nxl-mtext">Produtos</span>
+                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                    </a>
+                    <ul class="nxl-submenu">
+                        <li class="nxl-item"><a class="nxl-link" href="{% url 'product_list' %}">Listar</a></li>
+                        <li class="nxl-item"><a class="nxl-link" href="{% url 'product_create' %}">Criar</a></li>
+                    </ul>
+                </li>
+                <li class="nxl-item nxl-hasmenu {% if request.resolver_match.app_name == 'brands' %}active open{% endif %}">
+                    <a href="javascript:void(0);" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-tag"></i></span>
+                        <span class="nxl-mtext">Marcas</span>
+                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                    </a>
+                    <ul class="nxl-submenu">
+                        <li class="nxl-item"><a class="nxl-link" href="{% url 'brand_list' %}">Listar</a></li>
+                        <li class="nxl-item"><a class="nxl-link" href="{% url 'brand_create' %}">Criar</a></li>
+                    </ul>
+                </li>
+                <li class="nxl-item nxl-hasmenu {% if request.resolver_match.app_name == 'categories' %}active open{% endif %}">
+                    <a href="javascript:void(0);" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-layers"></i></span>
+                        <span class="nxl-mtext">Categorias</span>
+                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                    </a>
+                    <ul class="nxl-submenu">
+                        <li class="nxl-item"><a class="nxl-link" href="{% url 'category_list' %}">Listar</a></li>
+                        <li class="nxl-item"><a class="nxl-link" href="{% url 'category_create' %}">Criar</a></li>
+                    </ul>
+                </li>
+                <li class="nxl-item nxl-hasmenu {% if request.resolver_match.app_name == 'suppliers' %}active open{% endif %}">
+                    <a href="javascript:void(0);" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-truck"></i></span>
+                        <span class="nxl-mtext">Fornecedores</span>
+                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                    </a>
+                    <ul class="nxl-submenu">
+                        <li class="nxl-item"><a class="nxl-link" href="{% url 'supplier_list' %}">Listar</a></li>
+                        <li class="nxl-item"><a class="nxl-link" href="{% url 'supplier_create' %}">Criar</a></li>
+                    </ul>
+                </li>
+
+                <li class="nxl-item nxl-caption">
+                    <label>Movimentação</label>
+                </li>
+                <li class="nxl-item {% if request.resolver_match.url_name == 'data_import' %}active{% endif %}">
+                    <a href="{% url 'data_import' %}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-database"></i></span>
+                        <span class="nxl-mtext">Importar Dados</span>
+                    </a>
+                </li>
+                <li class="nxl-item nxl-hasmenu {% if request.resolver_match.app_name == 'inflows' %}active open{% endif %}">
+                    <a href="javascript:void(0);" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-log-in"></i></span>
+                        <span class="nxl-mtext">Entradas</span>
+                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                    </a>
+                    <ul class="nxl-submenu">
+                        <li class="nxl-item"><a class="nxl-link" href="{% url 'inflow_list' %}">Listar</a></li>
+                        <li class="nxl-item"><a class="nxl-link" href="{% url 'inflow_create' %}">Criar</a></li>
+                    </ul>
+                </li>
+                <li class="nxl-item nxl-hasmenu {% if request.resolver_match.app_name == 'outflows' %}active open{% endif %}">
+                    <a href="javascript:void(0);" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-log-out"></i></span>
+                        <span class="nxl-mtext">Saídas</span>
+                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                    </a>
+                    <ul class="nxl-submenu">
+                        <li class="nxl-item"><a class="nxl-link" href="{% url 'outflow_list' %}">Listar</a></li>
+                        <li class="nxl-item"><a class="nxl-link" href="{% url 'outflow_create' %}">Criar</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <ul class="nxl-navbar">
+                <li class="nxl-item nxl-caption">
+                    <label>Conta</label>
+                </li>
+                <li class="nxl-item {% if request.resolver_match.url_name == 'profile_edit' %}active{% endif %}">
+                    <a href="{% url 'profile_edit' %}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-user"></i></span>
+                        <span class="nxl-mtext">Perfil</span>
+                    </a>
+                </li>
+                <li class="nxl-item {% if request.resolver_match.app_name == 'tenants' %}active{% endif %}">
+                    <a href="{% url 'tenants:invite_employee' %}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-send"></i></span>
+                        <span class="nxl-mtext">Convidar</span>
+                    </a>
+                </li>
+                {% if user.is_staff %}
+                <li class="nxl-item {% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
+                    <a href="{% url 'settings' %}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-settings"></i></span>
+                        <span class="nxl-mtext">Configura&ccedil;&otilde;es</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
     </div>
-  </div>
+</nav>

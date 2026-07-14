@@ -1,0 +1,132 @@
+services:
+  sge_db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sge}
+      POSTGRES_USER: ${POSTGRES_USER:-caio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-caiopass}
+    volumes:
+      - sge_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-caio}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  sge_rabbitmq:
+    image: rabbitmq:4-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+    volumes:
+      - sge_rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  sge_web:
+    build: .
+    container_name: sge_web
+    environment:
+      DJANGO_ENV: ${DJANGO_ENV:-prd}
+      POSTGRES_URL: ${POSTGRES_URL:-}
+      POSTGRES_DB: ${POSTGRES_DB:-sge}
+      POSTGRES_USER: ${POSTGRES_USER:-caio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-caiopass}
+      POSTGRES_HOST: sge_db
+      POSTGRES_PORT: 5432
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.1-8b-instant}
+      SECRET_KEY: ${SECRET_KEY}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-*}
+      CELERY_BROKER_URL: pyamqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@sge_rabbitmq:5672//
+    env_file:
+      - .env
+    volumes:
+      - .:/SGE
+    ports:
+      - "8000:8000"
+    depends_on:
+      sge_db:
+        condition: service_healthy
+      sge_rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  sge_celery_worker:
+    build: .
+    container_name: sge_celery_worker
+    command: celery -A app worker -l info
+    environment:
+      DJANGO_ENV: ${DJANGO_ENV:-prd}
+      POSTGRES_HOST: sge_db
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.1-8b-instant}
+      SECRET_KEY: ${SECRET_KEY}
+      CELERY_BROKER_URL: pyamqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@sge_rabbitmq:5672//
+    env_file:
+      - .env
+    volumes:
+      - .:/SGE
+    depends_on:
+      sge_db:
+        condition: service_healthy
+      sge_rabbitmq:
+        condition: service_healthy
+      sge_web:
+        condition: service_started
+    restart: unless-stopped
+
+  sge_celery_beat:
+    build: .
+    container_name: sge_celery_beat
+    command: celery -A app beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    environment:
+      DJANGO_ENV: ${DJANGO_ENV:-prd}
+      POSTGRES_HOST: sge_db
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.1-8b-instant}
+      SECRET_KEY: ${SECRET_KEY}
+      CELERY_BROKER_URL: pyamqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@sge_rabbitmq:5672//
+    env_file:
+      - .env
+    volumes:
+      - .:/SGE
+    depends_on:
+      sge_db:
+        condition: service_healthy
+      sge_rabbitmq:
+        condition: service_healthy
+      sge_web:
+        condition: service_started
+    restart: unless-stopped
+
+  sge_service:
+    build: .
+    container_name: sge_service
+    command: python manage.py sge_agent_invoke
+    environment:
+      DJANGO_ENV: ${DJANGO_ENV:-prd}
+      POSTGRES_URL: ${POSTGRES_URL:-}
+      POSTGRES_HOST: sge_db
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.1-8b-instant}
+      SECRET_KEY: ${SECRET_KEY}
+    env_file:
+      - .env
+    volumes:
+      - .:/SGE
+    depends_on:
+      sge_db:
+        condition: service_healthy
+      sge_web:
+        condition: service_started
+    restart: "no"
+
+volumes:
+  sge_db_data:
+  sge_rabbitmq_data:

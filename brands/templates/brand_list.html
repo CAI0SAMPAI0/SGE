@@ -1,74 +1,70 @@
 {% extends 'base.html' %}
 
-{% block title %}
-SGE - Marcas
+{% block title %}SGE - Marcas{% endblock %}
+{% block page_title %}Marcas{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+    <li class="breadcrumb-item">Marcas</li>
+{% endblock %}
+
+{% block page_actions %}
+    {% if perms.brands.add_brand %}
+    <a href="{% url 'brand_create' %}" class="btn btn-primary">
+        <i class="feather-plus me-2"></i><span>Nova Marca</span>
+    </a>
+    {% endif %}
 {% endblock %}
 
 {% block content %}
-
-<div class="row mb-3">
-  <div class="col-md-6">
-    <form method="get" action="{% url 'brand_list' %}">
-      <div class="input-group">
-        <input type="text" class="form-control" name="name" placeholder="Nome" value="{{ request.GET.name }}">
-        <button type="submit" class="btn btn-primary">
-          <i class="bi bi-search"></i>
-        </button>
-      </div>
-    </form>
-  </div>
-  {% if perms.brands.add_brand %}
-  <div class="col-md-6">
-    <a href="{% url 'brand_create' %}" class="btn btn-success float-end">
-      <i class="bi bi-plus"></i> Nova Marca
-    </a>
-  </div>
-  {% endif %}
+<div class="card stretch stretch-full">
+    <div class="card-header">
+        <h5 class="card-title">Marcas Cadastradas</h5>
+        <form method="get" action="{% url 'brand_list' %}" class="ms-auto">
+            <div class="input-group input-group-sm" style="width: auto;">
+                <span class="input-group-text"><i class="feather-search"></i></span>
+                <input type="text" class="form-control" name="name" placeholder="Nome" value="{{ request.GET.name }}">
+                <button type="submit" class="btn btn-sm btn-light-brand">Buscar</button>
+            </div>
+        </form>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr class="border-b">
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Descricao</th>
+                        <th>Acoes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for brand in brands %}
+                    <tr>
+                        <td><a href="{% url 'brand_detail' brand.id %}" class="fw-bold text-primary">{{ brand.id }}</a></td>
+                        <td>{{ brand.name }}</td>
+                        <td class="text-truncate-1-line" style="max-width:300px;">{{ brand.description|default:"-" }}</td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a href="{% url 'brand_detail' brand.id %}" class="btn btn-icon btn-sm btn-light-brand" title="Ver"><i class="feather-eye fs-12"></i></a>
+                                {% if perms.brands.change_brand %}
+                                <a href="{% url 'brand_update' brand.id %}" class="btn btn-icon btn-sm btn-light-brand" title="Editar"><i class="feather-edit-2 fs-12"></i></a>
+                                {% endif %}
+                                {% if perms.brands.delete_brand %}
+                                <a href="{% url 'brand_delete' brand.id %}" class="btn btn-icon btn-sm text-danger" title="Excluir"><i class="feather-trash-2 fs-12"></i></a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="text-center text-muted py-3">Nenhuma marca encontrada.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer">
+        {% include 'components/_pagination.html' %}
+    </div>
 </div>
-
-<div class="table-responsive">
-  <table class="table table-striped table-bordered">
-    <thead class="thead-dark">
-      <tr>
-        <th>ID</th>
-        <th>Nome</th>
-        <th>Descrição</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for brand in brands %}
-      <tr>
-        <td>
-          <a href="{% url 'brand_detail' brand.id %}" class="text-primary fw-semibold">
-            {{ brand.id }}
-          </a>
-        </td>
-        <td>{{ brand.name }}</td>
-        <td>{{ brand.description }}</td>
-        <td>
-          <a href="{% url 'brand_detail' brand.id %}" class="btn btn-info btn-sm">
-            <i class="bi bi-eye"></i>
-          </a>
-
-          {% if perms.brands.change_brand %}
-          <a href="{% url 'brand_update' brand.id %}" class="btn btn-warning btn-sm">
-            <i class="bi bi-pencil"></i>
-          </a>
-          {% endif %}
-
-          {% if perms.brands.delete_brand %}
-          <a href="{% url 'brand_delete' brand.id %}" class="btn btn-danger btn-sm btn-delete">
-            <i class="bi bi-trash"></i>
-          </a>
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-
-{% include 'components/_pagination.html' %}
-
 {% endblock %}

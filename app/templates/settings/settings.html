@@ -1,26 +1,342 @@
 {% extends 'base.html' %}
-{% load static %}
-{% block title %}Configurações{% endblock %}
-{% block content %}
-<div class="container mx-auto p-4">
-  <h1 class="text-2xl font-bold mb-4 text-white">Configurações</h1>
-  <form class="space-y-4" method="POST">
-  {% csrf_token %}
-    <div class="flex items-center">
-      <label class="text-gray-200 mr-2" for="theme">Tema:</label>
-      <select id="theme" name="theme" class="bg-gray-800 text-white rounded p-1">
-        <option value="dark" selected>Escuro</option>
-        <option value="light">Claro</option>
-      </select>
-    </div>
-    <div class="flex items-center">
-      <label class="text-gray-200 mr-2" for="results_limit">Limite de resultados da IA:</label>
-      <input type="number" id="results_limit" name="results_limit" class="bg-gray-800 text-white rounded p-1 w-20" min="1" max="50" value="20" />
-    </div>
-    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
-      Salvar
-    </button>
-  </form>
-</div>
+
+{% block title %}SGE - Configura&ccedil;&otilde;es{% endblock %}
+{% block page_title %}Configura&ccedil;&otilde;es{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+    <li class="breadcrumb-item">Configura&ccedil;&otilde;es</li>
 {% endblock %}
-<script src="{% static 'js/ui.js' %}"></script>
+
+{% block content %}
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% elif message.tags == 'warning' %}alert-warning{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+{% endif %}
+
+<ul class="nav nav-tabs mb-3" id="settingsTabs">
+    <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-theme">
+            <i class="feather-droplet me-1"></i>Apar&ecirc;ncia
+        </button>
+    </li>
+    {% if user.is_staff %}
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-groups">
+            <i class="feather-users me-1"></i>Grupos &amp; Permiss&otilde;es
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-users">
+            <i class="feather-user me-1"></i>Usu&aacute;rios
+        </button>
+    </li>
+    {% endif %}
+</ul>
+
+<div class="tab-content">
+    <!-- =================== Tab: Apar&ecirc;ncia =================== -->
+    <div class="tab-pane fade show active" id="tab-theme">
+        <div class="card stretch stretch-full">
+            <div class="card-header">
+                <h5 class="card-title">Tema da Interface</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="sge-theme-card" style="cursor:pointer;">
+                            <div class="card border {% if user_theme == 'dark' %}border-primary border-2{% else %}border-secondary{% endif %}">
+                                <div class="card-body text-center">
+                                    <div style="background:#1a1a2e;border-radius:8px;height:80px;margin-bottom:10px;"></div>
+                                    <h6 class="fw-bold">Escuro</h6>
+                                    <input type="radio" name="theme-radio" value="dark" {% if user_theme == 'dark' %}checked{% endif %} onchange="SGEThemeChange('dark')" class="form-check-input mt-0">
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="sge-theme-card" style="cursor:pointer;">
+                            <div class="card border {% if user_theme == 'light' %}border-primary border-2{% else %}border-secondary{% endif %}">
+                                <div class="card-body text-center">
+                                    <div style="background:#f8f9fa;border-radius:8px;height:80px;margin-bottom:10px;"></div>
+                                    <h6 class="fw-bold">Claro</h6>
+                                    <input type="radio" name="theme-radio" value="light" {% if user_theme == 'light' %}checked{% endif %} onchange="SGEThemeChange('light')" class="form-check-input mt-0">
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <hr>
+                <p class="text-muted fs-12">O tema &eacute; salvo automaticamente e aplicado em todos os dispositivos.</p>
+            </div>
+        </div>
+
+        <div class="card stretch stretch-full mt-3">
+            <div class="card-header">
+                <h5 class="card-title">Configura&ccedil;&otilde;es Gerais</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'settings' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Limite de Resultados da IA</label>
+                        <input type="number" class="form-control" name="results_limit" min="1" max="50" value="{{ settings.results_limit }}">
+                        <div class="text-muted fs-11 mt-1">Numero maximo de resultados exibidos por padrao.</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="feather-save me-2"></i>Salvar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% if user.is_staff %}
+    <!-- =================== Tab: Grupos =================== -->
+    <div class="tab-pane fade" id="tab-groups">
+        <div class="row g-3">
+            <div class="col-lg-5">
+                <div class="card stretch stretch-full">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="feather-plus me-2"></i>Novo Grupo</h5>
+                    </div>
+                    <div class="card-body" style="max-height:600px;overflow-y:auto;">
+                        <form method="post" action="{% url 'group_create' %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Nome do Grupo</label>
+                                <input type="text" class="form-control" name="name" required>
+                            </div>
+                            <label class="form-label fw-semibold">Permiss&otilde;es</label>
+                            <div class="border rounded p-2 mb-3" style="max-height:300px;overflow-y:auto;">
+                                {% for group_name, perms in perm_groups.items %}
+                                <div class="fw-bold text-muted fs-12 mt-2 mb-1 text-uppercase">{{ group_name }}</div>
+                                {% for p in perms %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="permissions" value="{{ p.id }}" id="perm-{{ p.id }}">
+                                    <label class="form-check-label fs-12" for="perm-{{ p.id }}">{{ p.name }}</label>
+                                </div>
+                                {% endfor %}
+                                {% endfor %}
+                            </div>
+                            <button type="submit" class="btn btn-primary"><i class="feather-save me-2"></i>Criar Grupo</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <div class="card stretch stretch-full">
+                    <div class="card-header">
+                        <h5 class="card-title">Grupos Cadastrados</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr class="border-b">
+                                        <th>Grupo</th>
+                                        <th>Permiss&otilde;es</th>
+                                        <th>Usu&aacute;rios</th>
+                                        <th>A&ccedil;&otilde;es</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for g in groups %}
+                                    <tr>
+                                        <td class="fw-semibold">{{ g.name }}</td>
+                                        <td><span class="badge bg-soft-primary text-primary">{{ g.permissions.count }}</span></td>
+                                        <td><span class="badge bg-soft-success text-success">{{ g.user_set.count }}</span></td>
+                                        <td>
+                                            <button class="btn btn-icon btn-sm btn-light-brand" data-bs-toggle="modal" data-bs-target="#editGroup{{ g.id }}" title="Editar">
+                                                <i class="feather-edit-2 fs-12"></i>
+                                            </button>
+                                            <form method="post" action="{% url 'group_delete' g.id %}" class="d-inline" onsubmit="return confirm('Excluir grupo {{ g.name }}?')">
+                                                {% csrf_token %}
+                                                <button class="btn btn-icon btn-sm text-danger" title="Excluir"><i class="feather-trash-2 fs-12"></i></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr><td colspan="4" class="text-center text-muted py-3">Nenhum grupo cadastrado.</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% for g in groups %}
+        <div class="modal fade" id="editGroup{{ g.id }}" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <form method="post" action="{% url 'group_edit' g.id %}">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title">Editar Grupo: {{ g.name }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body" style="max-height:500px;overflow-y:auto;">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Nome</label>
+                                <input type="text" class="form-control" name="name" value="{{ g.name }}">
+                            </div>
+                            <label class="form-label fw-semibold">Permiss&otilde;es</label>
+                            <div class="border rounded p-2" style="max-height:300px;overflow-y:auto;">
+                                {% for group_name, perms in perm_groups.items %}
+                                <div class="fw-bold text-muted fs-12 mt-2 mb-1 text-uppercase">{{ group_name }}</div>
+                                {% for p in perms %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="permissions" value="{{ p.id }}" id="edit-perm-{{ g.id }}-{{ p.id }}" {% if p in g.permissions.all %}checked{% endif %}>
+                                    <label class="form-check-label fs-12" for="edit-perm-{{ g.id }}-{{ p.id }}">{{ p.name }}</label>
+                                </div>
+                                {% endfor %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-light-brand" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary"><i class="feather-save me-2"></i>Salvar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- =================== Tab: Usu&aacute;rios =================== -->
+    <div class="tab-pane fade" id="tab-users">
+        <div class="card stretch stretch-full">
+            <div class="card-header">
+                <h5 class="card-title">Usu&aacute;rios do Sistema</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr class="border-b">
+                                <th>Usu&aacute;rio</th>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Grupos</th>
+                                <th>Status</th>
+                                <th>A&ccedil;&otilde;es</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in users %}
+                            <tr>
+                                <td class="fw-semibold">{{ u.username }}</td>
+                                <td>{{ u.get_full_name|default:"-" }}</td>
+                                <td>{{ u.email }}</td>
+                                <td>
+                                    {% for g in u.groups.all %}
+                                    <span class="badge bg-soft-primary text-primary">{{ g.name }}</span>
+                                    {% empty %}
+                                    <span class="text-muted fs-12">-</span>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% if u.is_active %}
+                                    <span class="badge bg-soft-success text-success">Ativo</span>
+                                    {% else %}
+                                    <span class="badge bg-soft-danger text-danger">Inativo</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-icon btn-sm btn-light-brand" data-bs-toggle="modal" data-bs-target="#editUser{{ u.id }}" title="Editar">
+                                        <i class="feather-edit-2 fs-12"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="6" class="text-center text-muted py-3">Nenhum usu&aacute;rio.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {% for u in users %}
+        <div class="modal fade" id="editUser{{ u.id }}" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="post" action="{% url 'user_edit' u.id %}">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title">Editar Usu&aacute;rio: {{ u.username }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Nome</label>
+                                    <input type="text" class="form-control" name="first_name" value="{{ u.first_name }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Sobrenome</label>
+                                    <input type="text" class="form-control" name="last_name" value="{{ u.last_name }}">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Email</label>
+                                <input type="email" class="form-control" name="email" value="{{ u.email }}">
+                            </div>
+                            <label class="form-label fw-semibold">Grupos</label>
+                            <div class="border rounded p-2 mb-3" style="max-height:200px;overflow-y:auto;">
+                                {% for g in groups %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="groups" value="{{ g.id }}" id="user-{{ u.id }}-group-{{ g.id }}" {% if g in u.groups.all %}checked{% endif %}>
+                                    <label class="form-check-label fs-12" for="user-{{ u.id }}-group-{{ g.id }}">{{ g.name }}</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="is_active" id="user-{{ u.id }}-active" {% if u.is_active %}checked{% endif %}>
+                                <label class="form-check-label" for="user-{{ u.id }}-active">Ativo</label>
+                            </div>
+                            {% if request.user.is_superuser %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_staff" id="user-{{ u.id }}-staff" {% if u.is_staff %}checked{% endif %}>
+                                <label class="form-check-label" for="user-{{ u.id }}-staff">Staff (acesso administrativo)</label>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-light-brand" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary"><i class="feather-save me-2"></i>Salvar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function SGEThemeChange(theme) {
+        var csrf = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+        var html = document.documentElement;
+        var body = document.body;
+        html.classList.remove('app-skin-dark', 'app-skin-light');
+        html.classList.add('app-skin-' + theme);
+        html.setAttribute('data-bs-theme', theme);
+        localStorage.setItem('app-skin-dark', 'app-skin-' + theme);
+        body.className = body.className.replace(/theme-\w+/, 'theme-' + theme);
+        document.querySelectorAll('input[name="theme-radio"]').forEach(function (r) {
+            r.checked = (r.value === theme);
+        });
+        fetch('{% url "save_theme" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+            body: JSON.stringify({ theme: theme }),
+        });
+    }
+</script>
+{% endblock %}

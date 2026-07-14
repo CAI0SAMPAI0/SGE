@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from datetime import timedelta
+from urllib.parse import urlparse, parse_qs
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -8,7 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(BASE_DIR / '.env')
 
-ENVIRONMENT = os.getenv('DJANGO_ENV', 'dev') 
+ENVIRONMENT = os.getenv('DJANGO_ENV', 'dev')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -34,7 +35,11 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'rest_framework_simplejwt',
+    'widget_tweaks',
+    'django_celery_beat',
+    'django_celery_results',
 
+    'tenants',
     'authentication',
     'brands',
     'categories',
@@ -57,6 +62,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'app.middleware.TenantMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -74,6 +80,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'app.context_processors.user_theme',
             ],
         },
     },
@@ -84,16 +91,44 @@ WSGI_APPLICATION = 'app.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+#
+# Prioridade de configuracao do banco:
+#   1. POSTGRES_URL (NeonDB / qualquer Postgres de producao)
+#   2. Container local ``sge_db`` quando DJANGO_ENV == 'prd'
+#   3. SQLite local (dev)
 
-if ENVIRONMENT == 'prd':
+
+def _build_postgres_config(url):
+    parsed = urlparse(url)
+    query = parse_qs(parsed.query)
+    options = {}
+    for opt_key in ('sslmode', 'channel_binding'):
+        if opt_key in query:
+            options[opt_key] = query[opt_key][0]
+    return {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': parsed.path.lstrip('/'),
+        'USER': parsed.username or 'postgres',
+        'PASSWORD': parsed.password or '',
+        'HOST': parsed.hostname or 'localhost',
+        'PORT': str(parsed.port or 5432),
+        'OPTIONS': options or {},
+    }
+
+
+POSTGRES_URL = os.getenv('POSTGRES_URL', '').strip()
+
+if POSTGRES_URL:
+    DATABASES = {'default': _build_postgres_config(POSTGRES_URL)}
+elif ENVIRONMENT == 'prd':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': os.getenv('POSTGRES_DB'),
-            'USER': os.getenv('POSTGRES_USER'),
-            'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-            'HOST': os.getenv('POSTGRES_HOST'),
-            'PORT': os.getenv('POSTGRES_PORT'),
+            'NAME': os.getenv('POSTGRES_DB', 'sge'),
+            'USER': os.getenv('POSTGRES_USER', 'caio'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'caiopass'),
+            'HOST': os.getenv('POSTGRES_HOST', 'sge_db'),
+            'PORT': os.getenv('POSTGRES_PORT', '5432'),
         }
     }
 else:
@@ -102,6 +137,15 @@ else:
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
+    }
+
+# Alias para o SQLite legado, usado pelo comando de migracao SQLite -> Postgres
+SQLITE_LEGACY_PATH = BASE_DIR / 'db.sqlite3'
+if DATABASES['default'].get('ENGINE') != 'django.db.backends.sqlite3' and SQLITE_LEGACY_PATH.exists():
+    DATABASES['sqlite_legacy'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': SQLITE_LEGACY_PATH,
+        'TEST': {'NAME': None},
     }
 
 
@@ -129,7 +173,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'pt-BR'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Sao_Paulo'
 
 USE_I18N = True
 
@@ -140,6 +184,7 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -164,3 +209,18 @@ SIMPLE_JWT = {
 
 GROQ_MODEL = os.getenv('GROQ_MODEL', 'llama-3.1-8b-instant')
 GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')
+
+# Celery
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'pyamqp://guest:guest@localhost:5672//')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'django-db')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+CELERY_TIMEZONE = 'America/Sao_Paulo'
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+# Upload
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024  # 50 MB

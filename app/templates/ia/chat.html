@@ -1,0 +1,367 @@
+{% extends 'base.html' %}
+
+{% block title %}SGE - Chat{% endblock %}
+{% block page_title %}SGE Agent{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+    <li class="breadcrumb-item">SGE Agent</li>
+{% endblock %}
+
+{% block sidebar %}
+<nav class="nxl-navigation">
+    <div class="navbar-wrapper">
+        <div class="m-header">
+            <a href="{% url 'home' %}" class="b-brand d-flex align-items-center gap-2 text-decoration-none">
+                <i class="feather-arrow-left fs-5"></i>
+                <span class="logo logo-lg fw-bold">Conversas</span>
+            </a>
+            <button class="btn btn-sm btn-primary ms-auto" onclick="SGEChat.newConversation()" title="Nova conversa">
+                <i class="feather-plus"></i>
+            </button>
+        </div>
+        <div class="navbar-content">
+            <div class="p-2">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="feather-search"></i></span>
+                    <input type="text" class="form-control" id="chatSearch" placeholder="Buscar conversa..."
+                           oninput="SGEChat.filterConversations(this.value)">
+                </div>
+            </div>
+            <div id="convList">
+                {% for conv in conversations %}
+                <div class="chat-conv-item {% if conv.id == active_conversation_id %}active{% endif %}"
+                     data-id="{{ conv.id }}" data-title="{{ conv.title|lower }}"
+                     onclick="SGEChat.openConversation({{ conv.id }})">
+                    <i class="feather-message-square text-muted me-2"></i>
+                    <span class="chat-conv-title text-truncate-1-line flex-grow-1">{{ conv.title }}</span>
+                    <div class="chat-conv-actions ms-auto">
+                        <button class="btn btn-icon btn-sm" title="Renomear"
+                                onclick="event.stopPropagation(); SGEChat.renameConversation({{ conv.id }}, '{{ conv.title|escapejs }}')">
+                            <i class="feather-edit-2 fs-12"></i>
+                        </button>
+                        <button class="btn btn-icon btn-sm text-danger" title="Excluir"
+                                onclick="event.stopPropagation(); SGEChat.deleteConversation({{ conv.id }})">
+                            <i class="feather-trash-2 fs-12"></i>
+                        </button>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center text-muted p-3 fs-12" id="convEmpty">Nenhuma conversa.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</nav>
+
+<style>
+    .chat-conv-item { display: flex; align-items: center; padding: .5rem .75rem; cursor: pointer; border-radius: .375rem; transition: background .15s; gap: .25rem; }
+    .chat-conv-item:hover { background: rgba(0,0,0,.04); }
+    [data-bs-theme="dark"] .chat-conv-item:hover { background: rgba(255,255,255,.06); }
+    .chat-conv-item.active { background: rgba(80,165,245,.12); }
+    .chat-conv-actions { opacity: 0; transition: opacity .15s; }
+    .chat-conv-item:hover .chat-conv-actions { opacity: 1; }
+    .btn-icon { padding: .15rem .25rem; border: none; background: none; }
+    .btn-icon:hover { background: rgba(0,0,0,.08); border-radius: .25rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card stretch stretch-full chat-main-card">
+    <div class="chat-header d-flex align-items-center p-3 border-bottom">
+        <div class="avatar-text avatar-sm bg-soft-primary text-primary me-2">
+            <i class="feather-cpu"></i>
+        </div>
+        <h6 class="fw-bold mb-0" id="activeConvTitle">
+            {% if active_conversation_id %}SGE Agent{% else %}Nova conversa{% endif %}
+        </h6>
+        <span class="badge bg-soft-primary text-primary ms-2 d-none d-sm-inline">IA</span>
+    </div>
+    <div class="chat-scroll p-3" id="chatBox">
+        {% if messages %}
+            {% for msg in messages %}
+            <div class="sge-chat-row d-flex mb-3 {% if msg.role == 'user' %}justify-content-end{% endif %}">
+                <div class="chat-bubble {% if msg.role == 'user' %}chat-bubble-user{% else %}chat-bubble-assistant{% endif %} position-relative">
+                    <div class="markdown-body" data-md>{{ msg.content }}</div>
+                    <div class="sge-chat-actions mt-1 d-flex gap-1">
+                        <button class="btn btn-icon btn-sm" title="Copiar"
+                                onclick="SGEChat.copyText(this, {{ msg.id }})">
+                            <i class="feather-copy fs-12"></i>
+                        </button>
+                        {% if msg.role == 'user' %}
+                        <button class="btn btn-icon btn-sm" title="Editar e reenviar"
+                                onclick="SGEChat.editMessage({{ msg.id }})">
+                            <i class="feather-edit-2 fs-12"></i>
+                        </button>
+                        {% else %}
+                        <button class="btn btn-icon btn-sm" title="Regenerar"
+                                onclick="SGEChat.regenerate({{ msg.id }})">
+                            <i class="feather-refresh-cw fs-12"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% elif active_conversation_id %}
+            <div class="text-center text-muted p-5" id="chatEmpty">
+                <i class="feather-message-square fs-1 d-block mb-2"></i>
+                Envie uma mensagem para comecar.
+            </div>
+        {% else %}
+            <div class="text-center text-muted p-5" id="chatEmpty">
+                <i class="feather-message-square fs-1 d-block mb-2"></i>
+                Crie uma conversa para falar com a IA.
+            </div>
+        {% endif %}
+    </div>
+    <div class="chat-input-area p-3 border-top">
+        <form id="chatForm" onsubmit="return false;">
+            <div class="input-group">
+                <textarea class="form-control" id="chatInput" rows="1" placeholder="Digite sua mensagem..."
+                          onkeydown="SGEChat.handleKeydown(event)" style="resize:none;max-height:120px;"></textarea>
+                <button class="btn btn-primary" type="button" onclick="SGEChat.send()">
+                    <i class="feather-send"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .chat-main-card { max-height: calc(100vh - 200px); display: flex; flex-direction: column; }
+    .chat-scroll { flex-grow: 1; overflow-y: auto; }
+    .chat-input-area textarea { resize: none; }
+</style>
+
+<script>
+(function () {
+    var csrf = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+    var activeConvId = {% if active_conversation_id %}{{ active_conversation_id }}{% else %}null{% endif %};
+
+    function post(url, body) {
+        return fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+            body: JSON.stringify(body),
+        }).then(function (r) { return r.json(); });
+    }
+
+    function renderMarkdown(text) {
+        if (window.marked) { try { return window.marked.parse(text); } catch (e) {} }
+        return text;
+    }
+
+    function scrollToBottom() {
+        var box = document.getElementById('chatBox');
+        if (box) box.scrollTop = box.scrollHeight;
+    }
+
+    function clearEmpty() {
+        var e = document.getElementById('chatEmpty');
+        if (e) e.remove();
+    }
+
+    function addBubble(role, content, msgId) {
+        clearEmpty();
+        var box = document.getElementById('chatBox');
+        var row = document.createElement('div');
+        row.className = 'sge-chat-row d-flex mb-3 ' + (role === 'user' ? 'justify-content-end' : '');
+        var bubble = document.createElement('div');
+        bubble.className = 'chat-bubble ' + (role === 'user' ? 'chat-bubble-user' : 'chat-bubble-assistant') + ' position-relative';
+        var md = document.createElement('div');
+        md.className = 'markdown-body';
+        md.innerHTML = renderMarkdown(content);
+        bubble.appendChild(md);
+        var actions = document.createElement('div');
+        actions.className = 'sge-chat-actions mt-1 d-flex gap-1';
+        var copyBtn = document.createElement('button');
+        copyBtn.className = 'btn btn-icon btn-sm'; copyBtn.title = 'Copiar';
+        copyBtn.innerHTML = '<i class="feather-copy fs-12"></i>';
+        copyBtn.onclick = function () { SGEChat.copyText(this, msgId); };
+        actions.appendChild(copyBtn);
+        if (role === 'user') {
+            var editBtn = document.createElement('button');
+            editBtn.className = 'btn btn-icon btn-sm'; editBtn.title = 'Editar e reenviar';
+            editBtn.innerHTML = '<i class="feather-edit-2 fs-12"></i>';
+            if (msgId) editBtn.onclick = function () { SGEChat.editMessage(msgId); };
+            actions.appendChild(editBtn);
+        } else {
+            var regenBtn = document.createElement('button');
+            regenBtn.className = 'btn btn-icon btn-sm'; regenBtn.title = 'Regenerar';
+            regenBtn.innerHTML = '<i class="feather-refresh-cw fs-12"></i>';
+            if (msgId) regenBtn.onclick = function () { SGEChat.regenerate(msgId); };
+            actions.appendChild(regenBtn);
+        }
+        bubble.appendChild(actions);
+        row.appendChild(bubble);
+        box.appendChild(row);
+        scrollToBottom();
+        if (window.SGEReplaceIcons) window.SGEReplaceIcons();
+        return row;
+    }
+
+    function setLoading(text) { return addBubble('assistant', text || '...'); }
+
+    function setActiveConv(convId, title) {
+        activeConvId = convId;
+        document.querySelectorAll('.chat-conv-item').forEach(function (el) {
+            el.classList.toggle('active', el.dataset.id == convId);
+        });
+        var header = document.getElementById('activeConvTitle');
+        if (header && title) header.textContent = title;
+    }
+
+    window.SGEChat = {
+        send: function () {
+            var input = document.getElementById('chatInput');
+            var msg = input.value.trim();
+            if (!msg) return;
+            if (!activeConvId) { SGEChat.newConversation(msg); return; }
+            input.value = '';
+            addBubble('user', msg, null);
+            var loadingRow = setLoading('Gerando resposta...');
+            post('{% url "ai:chat_send" %}', { conversation_id: activeConvId, message: msg })
+                .then(function (data) {
+                    loadingRow.remove();
+                    if (data.error) { addBubble('assistant', '**Erro:** ' + data.error); return; }
+                    addBubble('assistant', data.reply, null);
+                    if (data.conversation_title && data.conversation_title !== 'Nova conversa') {
+                        SGEChat.updateConvItemTitle(activeConvId, data.conversation_title);
+                    }
+                }).catch(function () {
+                    loadingRow.remove();
+                    addBubble('assistant', '**Erro:** Falha ao contatar a IA.');
+                });
+        },
+
+        newConversation: function (initialMsg) {
+            post('{% url "ai:conversation_create" %}', {}).then(function (data) {
+                var list = document.getElementById('convList');
+                var empty = document.getElementById('convEmpty');
+                if (empty) empty.remove();
+                var item = document.createElement('div');
+                item.className = 'chat-conv-item';
+                item.dataset.id = data.id; item.dataset.title = data.title.toLowerCase();
+                item.onclick = function () { SGEChat.openConversation(data.id); };
+                item.innerHTML = '<i class="feather-message-square text-muted me-2"></i>' +
+                    '<span class="chat-conv-title text-truncate-1-line flex-grow-1">' + data.title + '</span>' +
+                    '<div class="chat-conv-actions ms-auto">' +
+                    '<button class="btn btn-icon btn-sm" title="Renomear" onclick="event.stopPropagation(); SGEChat.renameConversation(' + data.id + ')">' +
+                    '<i class="feather-edit-2 fs-12"></i></button>' +
+                    '<button class="btn btn-icon btn-sm text-danger" title="Excluir" onclick="event.stopPropagation(); SGEChat.deleteConversation(' + data.id + ')">' +
+                    '<i class="feather-trash-2 fs-12"></i></button></div>';
+                list.prepend(item);
+                setActiveConv(data.id, data.title);
+                document.getElementById('chatBox').innerHTML = '';
+                clearEmpty();
+                if (window.SGEReplaceIcons) window.SGEReplaceIcons();
+                if (initialMsg) {
+                    document.getElementById('chatInput').value = initialMsg;
+                    SGEChat.send();
+                }
+            });
+        },
+
+        openConversation: function (convId) {
+            setActiveConv(convId, null);
+            var box = document.getElementById('chatBox');
+            box.innerHTML = '<div class="text-center text-muted p-5"><i class="feather-loader fs-1 d-block mb-2"></i>Carregando...</div>';
+            if (window.SGEReplaceIcons) window.SGEReplaceIcons();
+            fetch('/ia/chat/conversation/' + convId + '/messages/')
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    box.innerHTML = '';
+                    if (data.title) setActiveConv(convId, data.title);
+                    if (!data.messages || data.messages.length === 0) {
+                        box.innerHTML = '<div class="text-center text-muted p-5" id="chatEmpty"><i class="feather-message-square fs-1 d-block mb-2"></i>Envie uma mensagem para comecar.</div>';
+                    } else {
+                        data.messages.forEach(function (m) {
+                            addBubble(m.role, m.content, m.id);
+                        });
+                    }
+                    if (window.SGEReplaceIcons) window.SGEReplaceIcons();
+                });
+        },
+
+        renameConversation: function (convId, currentTitle) {
+            var newTitle = prompt('Novo titulo:', currentTitle);
+            if (!newTitle || newTitle === currentTitle) return;
+            post('/ia/chat/conversation/' + convId + '/rename/', { title: newTitle }).then(function (data) {
+                if (data.title) SGEChat.updateConvItemTitle(convId, data.title);
+            });
+        },
+
+        deleteConversation: function (convId) {
+            if (!confirm('Excluir esta conversa?')) return;
+            post('/ia/chat/conversation/' + convId + '/delete/', {}).then(function () {
+                var item = document.querySelector('.chat-conv-item[data-id="' + convId + '"]');
+                if (item) item.remove();
+                if (activeConvId === convId) {
+                    activeConvId = null;
+                    document.getElementById('chatBox').innerHTML = '<div class="text-center text-muted p-5" id="chatEmpty"><i class="feather-message-square fs-1 d-block mb-2"></i>Crie uma conversa.</div>';
+                    if (window.SGEReplaceIcons) window.SGEReplaceIcons();
+                }
+                var remaining = document.querySelectorAll('.chat-conv-item');
+                if (remaining.length === 0) {
+                    document.getElementById('convList').innerHTML = '<div class="text-center text-muted p-3 fs-12" id="convEmpty">Nenhuma conversa.</div>';
+                }
+            });
+        },
+
+        updateConvItemTitle: function (convId, title) {
+            var span = document.querySelector('.chat-conv-item[data-id="' + convId + '"] .chat-conv-title');
+            if (span) span.textContent = title;
+            var item = document.querySelector('.chat-conv-item[data-id="' + convId + '"]');
+            if (item) item.dataset.title = title.toLowerCase();
+            var header = document.getElementById('activeConvTitle');
+            if (header && activeConvId == convId) header.textContent = title;
+        },
+
+        filterConversations: function (query) {
+            var q = query.toLowerCase();
+            document.querySelectorAll('.chat-conv-item').forEach(function (el) {
+                el.style.display = el.dataset.title.indexOf(q) === -1 ? 'none' : '';
+            });
+        },
+
+        copyText: function (btn, msgId) {
+            var bubble = btn.closest('.chat-bubble');
+            var mdEl = bubble.querySelector('.markdown-body');
+            var text = mdEl ? mdEl.textContent : '';
+            navigator.clipboard.writeText(text).then(function () {
+                var icon = btn.querySelector('i');
+                var orig = icon.className;
+                icon.className = 'feather-check fs-12 text-success';
+                if (window.SGEReplaceIcons) window.SGEReplaceIcons();
+                setTimeout(function () { icon.className = orig; if (window.SGEReplaceIcons) window.SGEReplaceIcons(); }, 1500);
+            });
+        },
+
+        editMessage: function (msgId) {
+            var newText = prompt('Editar mensagem:');
+            if (!newText) return;
+            post('/ia/chat/message/' + msgId + '/edit/', { message: newText, conversation_id: activeConvId })
+                .then(function (data) {
+                    if (data.reply) addBubble('assistant', data.reply, null);
+                });
+        },
+
+        regenerate: function (msgId) {
+            if (!msgId) return;
+            var loadingRow = setLoading('Regenerando...');
+            post('/ia/chat/message/' + msgId + '/regenerate/', { conversation_id: activeConvId })
+                .then(function (data) {
+                    loadingRow.remove();
+                    if (data.reply) addBubble('assistant', data.reply, null);
+                });
+        },
+
+        handleKeydown: function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); SGEChat.send(); }
+        },
+    };
+
+    document.addEventListener('DOMContentLoaded', scrollToBottom);
+})();
+</script>
+{% endblock %}

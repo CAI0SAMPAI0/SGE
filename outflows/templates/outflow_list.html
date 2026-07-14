@@ -1,72 +1,69 @@
 {% extends 'base.html' %}
 
-{% block title %}
-SGE - Saídas
+{% block title %}SGE - Saídas{% endblock %}
+{% block page_title %}Saídas{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+    <li class="breadcrumb-item">Saídas</li>
+{% endblock %}
+
+{% block page_actions %}
+    {% if perms.outflows.add_outflow %}
+    <a href="{% url 'outflow_create' %}" class="btn btn-primary">
+        <i class="feather-plus me-2"></i><span>Nova Saída</span>
+    </a>
+    {% endif %}
 {% endblock %}
 
 {% block content %}
 
 {% if perms.outflows.view_outflow %}
-{% include 'components/_sales_metrics.html' %}
+    {% include 'components/_sales_metrics.html' %}
 {% endif %}
 
-<div class="mb-4"></div>
-
-<div class="row mb-3">
-  <div class="col-md-6">
-    <form method="get" action="{% url 'outflow_list' %}">
-      <div class="input-group">
-        <input type="text" class="form-control" name="product" placeholder="Produto" value="{{ request.GET.product }}">
-        <button type="submit" class="btn btn-primary">
-          <i class="bi bi-search"></i>
-        </button>
-      </div>
-    </form>
-  </div>
-  {% if perms.outflows.add_outflow %}
-  <div class="col-md-6">
-    <a href="{% url 'outflow_create' %}" class="btn btn-success float-end">
-      <i class="bi bi-plus"></i> Nova Saída
-    </a>
-  </div>
-  {% endif %}
+<div class="card stretch stretch-full mt-4">
+    <div class="card-header">
+        <h5 class="card-title">Saídas de Estoque</h5>
+        <form method="get" action="{% url 'outflow_list' %}" class="ms-auto">
+            <div class="input-group input-group-sm" style="width: auto;">
+                <span class="input-group-text"><i class="feather-search"></i></span>
+                <input type="text" class="form-control" name="product" placeholder="Produto" value="{{ request.GET.product }}">
+                <button type="submit" class="btn btn-sm btn-light-brand">Buscar</button>
+            </div>
+        </form>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr class="border-b">
+                        <th>ID</th>
+                        <th>Produto</th>
+                        <th>Quantidade</th>
+                        <th>Data</th>
+                        <th>Acoes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for outflow in outflows %}
+                    <tr>
+                        <td><a href="{% url 'outflow_detail' outflow.id %}" class="fw-bold text-primary">{{ outflow.id }}</a></td>
+                        <td>{{ outflow.product }}</td>
+                        <td><span class="badge bg-soft-danger text-danger">{{ outflow.quantity }}</span></td>
+                        <td>{{ outflow.created_at|date:'d/m/Y H:i' }}</td>
+                        <td>
+                            <a href="{% url 'outflow_detail' outflow.id %}" class="btn btn-icon btn-sm btn-light-brand" title="Ver"><i class="feather-eye fs-12"></i></a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center text-muted py-3">Nenhuma saída encontrada.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer">
+        {% include 'components/_pagination.html' %}
+    </div>
 </div>
-
-<div class="table-responsive">
-  <table class="table table-striped table-bordered">
-    <thead class="thead-dark">
-      <tr>
-        <th>ID</th>
-        <th>Produto</th>
-        <th>Fornecedor</th>
-        <th>Quantidade</th>
-        <th>Data de entrada</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for outflow in outflows %}
-      <tr>
-        <td>
-          <a href="{% url 'outflow_detail' outflow.id %}" class="text-primary fw-semibold">
-            {{ outflow.id }}
-          </a>
-        </td>
-        <td>{{ outflow.product }}</td>
-        <td>{{ outflow.supplier }}</td>
-        <td>{{ outflow.quantity }}</td>
-        <td>{{ outflow.created_at }}</td>
-        <td>
-          <a href="{% url 'outflow_detail' outflow.id %}" class="btn btn-info btn-sm">
-            <i class="bi bi-eye"></i>
-          </a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-
-{% include 'components/_pagination.html' %}
-
 {% endblock %}

@@ -1,16 +1,42 @@
 {% extends 'base.html' %}
-
+{% block title %}SGE - Detalhes da Categoria{% endblock %}
+{% block page_title %}Detalhes da Categoria{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'category_list' %}">Categorias</a></li>
+    <li class="breadcrumb-item">{{ object.name }}</li>
+{% endblock %}
+{% block page_actions %}
+    {% if perms.categories.change_category %}
+    <a href="{% url 'category_update' object.id %}" class="btn btn-light-brand"><i class="feather-edit-2 me-2"></i>Editar</a>
+    {% endif %}
+    {% if perms.categories.delete_category %}
+    <a href="{% url 'category_delete' object.id %}" class="btn btn-light-danger"><i class="feather-trash-2 me-2"></i>Excluir</a>
+    {% endif %}
+{% endblock %}
 {% block content %}
-  <div class="container mt-4">
-    <h3 class="display-4">Detalhes da Categoria</h3>
-
-    <div class="card">
-      <div class="card-body">
-        <h3 class="card-title">{{ object.name }}</h3>
-        <p class="card-text">{{ object.description }}</p>
-      </div>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card stretch stretch-full">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <div class="avatar-text avatar-md bg-soft-primary text-primary me-3"><i class="feather-layers"></i></div>
+                    <h5 class="card-title mb-0">{{ object.name }}</h5>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr><th class="w-25 text-muted fs-12">Nome</th><td>{{ object.name }}</td></tr>
+                            <tr><th class="text-muted fs-12">Descricao</th><td>{{ object.description|default:"-" }}</td></tr>
+                            <tr><th class="text-muted fs-12">Criado em</th><td>{{ object.created_at|date:'d/m/Y H:i' }}</td></tr>
+                            <tr><th class="text-muted fs-12">Atualizado em</th><td>{{ object.updated_at|date:'d/m/Y H:i' }}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <a href="{% url 'category_list' %}" class="btn btn-secondary mt-3">Voltar para a Lista de Categorias</a>
-  </div>
+</div>
 {% endblock %}

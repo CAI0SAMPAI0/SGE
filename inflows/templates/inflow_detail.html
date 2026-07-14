@@ -1,18 +1,46 @@
 {% extends 'base.html' %}
 
+{% block title %}SGE - Detalhes da Entrada{% endblock %}
+{% block page_title %}Detalhes da Entrada{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'inflow_list' %}">Entradas</a></li>
+    <li class="breadcrumb-item">#{{ object.id }}</li>
+{% endblock %}
+
+{% block page_actions %}
+    <a href="{% url 'inflow_list' %}" class="btn btn-light-brand"><i class="feather-arrow-left me-2"></i>Voltar</a>
+{% endblock %}
+
 {% block content %}
-  <div class="container mt-4">
-    <h3 class="display-4">Detalhes da Entrada</h3>
-
-    <div class="card">
-      <div class="card-body">
-        <h3 class="card-title">{{ object.product }}</h3>
-        <p class="card-text">Fornecedor: <strong>{{ object.supplier }}</strong></p>
-        <p class="card-text">Quantidade: <strong>{{ object.quantity }}</strong></p>
-        <p class="card-text">{{ object.description }}</p>
-      </div>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card stretch stretch-full">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <div class="avatar-text avatar-md bg-soft-success text-success me-3"><i class="feather-log-in"></i></div>
+                    <div>
+                        <h5 class="card-title mb-0">{{ object.product }}</h5>
+                        <span class="fs-12 text-muted">Entrada #{{ object.id }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr><th class="w-25 text-muted fs-12">Produto</th><td>{{ object.product }}</td></tr>
+                            <tr><th class="text-muted fs-12">Fornecedor</th><td>{{ object.supplier }}</td></tr>
+                            <tr><th class="text-muted fs-12">Quantidade</th><td><span class="badge bg-soft-primary text-primary">{{ object.quantity }}</span></td></tr>
+                            <tr><th class="text-muted fs-12">Data</th><td>{{ object.created_at|date:'d/m/Y H:i' }}</td></tr>
+                            {% if object.description %}
+                            <tr><th class="text-muted fs-12">Descricao</th><td>{{ object.description }}</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <a href="{% url 'inflow_list' %}" class="btn btn-secondary mt-3">Voltar para a Lista de Entradas</a>
-  </div>
+</div>
 {% endblock %}

@@ -1,20 +1,26 @@
 {% extends 'base.html' %}
-
+{% block title %}SGE - Excluir Marca{% endblock %}
+{% block page_title %}Excluir Marca{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'brand_list' %}">Marcas</a></li>
+    <li class="breadcrumb-item">Excluir</li>
+{% endblock %}
 {% block content %}
-  <div class="container mt-4">
-    <h3 class="display-4">Deletar Marca</h3>
-
-    <div class="card">
-      <div class="card-body">
-        <p class="card-text">Tem certeza de que deseja excluir a marca <strong>{{ object.name }}</strong>?</p>
-
-        <form method="post">
-          {% csrf_token %}
-          <button type="submit" class="btn btn-danger">Deletar</button>
-        </form>
-        
-        <a href="{% url 'brand_list' %}" class="btn btn-secondary mt-3">Cancelar e Voltar para a Lista de Marcas</a>
-      </div>
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card stretch stretch-full">
+            <div class="card-body text-center py-5">
+                <div class="avatar-text avatar-xl bg-soft-danger text-danger mx-auto mb-3"><i class="feather-alert-triangle"></i></div>
+                <h5 class="fw-bold">Confirmar Exclusao</h5>
+                <p class="text-muted">Tem certeza que deseja excluir a marca <strong>{{ object.name }}</strong>?</p>
+                <form method="post" class="d-flex gap-2 justify-content-center mt-4">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger"><i class="feather-trash-2 me-2"></i>Excluir</button>
+                    <a href="{% url 'brand_list' %}" class="btn btn-light-brand"><i class="feather-x me-2"></i>Cancelar</a>
+                </form>
+            </div>
+        </div>
     </div>
-  </div>
+</div>
 {% endblock %}

@@ -2,10 +2,11 @@ from rest_framework import generics
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView
+from app.mixins import TenantFilterMixin
 from . import models, forms, serializers
 
 
-class BrandListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+class BrandListView(LoginRequiredMixin, PermissionRequiredMixin, TenantFilterMixin, ListView):
     model = models.Brand
     template_name = 'brand_list.html'
     context_object_name = 'brands'
@@ -22,7 +23,7 @@ class BrandListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
         return queryset
 
 
-class BrandCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+class BrandCreateView(LoginRequiredMixin, PermissionRequiredMixin, TenantFilterMixin, CreateView):
     model = models.Brand
     template_name = 'brand_create.html'
     form_class = forms.BrandForm
@@ -30,13 +31,13 @@ class BrandCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     permission_required = 'brands.add_brand'
 
 
-class BrandDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+class BrandDetailView(LoginRequiredMixin, PermissionRequiredMixin, TenantFilterMixin, DetailView):
     model = models.Brand
     template_name = 'brand_detail.html'
     permission_required = 'brands.view_brand'
 
 
-class BrandUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class BrandUpdateView(LoginRequiredMixin, PermissionRequiredMixin, TenantFilterMixin, UpdateView):
     model = models.Brand
     template_name = 'brand_update.html'
     form_class = forms.BrandForm
@@ -44,7 +45,7 @@ class BrandUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     permission_required = 'brands.change_brand'
 
 
-class BrandDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+class BrandDeleteView(LoginRequiredMixin, PermissionRequiredMixin, TenantFilterMixin, DeleteView):
     model = models.Brand
     template_name = 'brand_delete.html'
     success_url = reverse_lazy('brand_list')

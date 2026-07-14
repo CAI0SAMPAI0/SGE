@@ -3,12 +3,13 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView
 from app import metrics
+from app.mixins import TenantFilterMixin
 from brands.models import Brand
 from categories.models import Category
 from . import models, forms, serializers
 
 
-class ProductListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+class ProductListView(LoginRequiredMixin, PermissionRequiredMixin, TenantFilterMixin, ListView):
     model = models.Product
     template_name = 'product_list.html'
     context_object_name = 'products'
@@ -35,14 +36,14 @@ class ProductListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['product_metrics'] = metrics.get_product_metrics()
-        context['sales_metrics'] = metrics.get_sales_metrics()
-        context['categories'] = Category.objects.all()
-        context['brands'] = Brand.objects.all()
+        context['product_metrics'] = metrics.get_product_metrics(tenant=self.request.tenant)
+        context['sales_metrics'] = metrics.get_sales_metrics(tenant=self.request.tenant)
+        context['categories'] = Category.objects.filter(tenant=self.request.tenant)
+        context['brands'] = Brand.objects.filter(tenant=self.request.tenant)
         return context
 
 
-class ProductCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+class ProductCreateView(LoginRequiredMixin, PermissionRequiredMixin, TenantFilterMixin, CreateView):
     model = models.Product
     template_name = 'product_create.html'
     form_class = forms.ProductForm
@@ -50,13 +51,13 @@ class ProductCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
     permission_required = 'products.add_product'
 
 
-class ProductDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+class ProductDetailView(LoginRequiredMixin, PermissionRequiredMixin, TenantFilterMixin, DetailView):
     model = models.Product
     template_name = 'product_detail.html'
     permission_required = 'products.view_product'
 
 
-class ProductUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class ProductUpdateView(LoginRequiredMixin, PermissionRequiredMixin, TenantFilterMixin, UpdateView):
     model = models.Product
     template_name = 'product_update.html'
     form_class = forms.ProductForm
@@ -64,7 +65,7 @@ class ProductUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
     permission_required = 'products.change_product'
 
 
-class ProductDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+class ProductDeleteView(LoginRequiredMixin, PermissionRequiredMixin, TenantFilterMixin, DeleteView):
     model = models.Product
     template_name = 'product_delete.html'
     success_url = reverse_lazy('product_list')

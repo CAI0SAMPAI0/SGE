@@ -1,23 +1,79 @@
 {% extends 'base.html' %}
-{% block title %}Histórico da IA{% endblock %}
-{% block content %}
-<div class="container mx-auto p-4">
-  <h1 class="text-2xl font-bold mb-4 text-white">Histórico da IA</h1>
-  {% if results %}
-    <ul class="space-y-4">
-      {% for r in results %}
-        <li class="bg-gray-800 bg-opacity-50 rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow">
-          <div class="flex justify-between items-center mb-2">
-            <span class="text-sm text-gray-400">{{ r.created_at|date:'Y-m-d H:i' }}</span>
-            <button class="text-blue-400 hover:underline" onclick="copyToClipboard('{{ r.result|escapejs }}')">Copiar</button>
-          </div>
-          <p class="text-gray-200 line-clamp-3">{{ r.result }}</p>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p class="text-gray-300">Nenhum resultado disponível.</p>
-  {% endif %}
-</div>
+
+{% block title %}SGE - Histórico IA{% endblock %}
+{% block page_title %}Histórico IA{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+    <li class="breadcrumb-item">Histórico IA</li>
 {% endblock %}
-<script src="{% static 'js/ui.js' %}"></script>
+
+{% block page_actions %}
+    <a href="{% url 'ai:chat' %}" class="btn btn-light-brand">
+        <i class="feather-message-circle me-2"></i>
+        <span>Novo Chat</span>
+    </a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card stretch stretch-full">
+            <div class="card-header">
+                <h5 class="card-title">Insights Gerados</h5>
+            </div>
+            <div class="card-body">
+                {% if results %}
+                <div class="row g-3">
+                    {% for result in results %}
+                    <div class="col-md-6">
+                        <div class="card border h-100">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="avatar-text avatar-md bg-soft-primary text-primary me-3">
+                                        <i class="feather-cpu"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0">SGE Agent</h6>
+                                        <span class="fs-12 text-muted">{{ result.created_at|date:'d/m/Y H:i' }}</span>
+                                    </div>
+                                    <button class="btn btn-icon btn-sm ms-auto" title="Copiar"
+                                            onclick="SGEHistory.copy(this)">
+                                        <i class="feather-copy fs-12"></i>
+                                    </button>
+                                </div>
+                                <div class="markdown-body" data-md>{{ result.result }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="feather-inbox fs-1 d-block mb-2"></i>
+                    <p>Nenhum insight gerado ainda.</p>
+                    <a href="{% url 'ai:chat' %}" class="btn btn-primary mt-2">
+                        <i class="feather-message-circle me-2"></i> Iniciar conversa
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var SGEHistory = {
+        copy: function (btn) {
+            var card = btn.closest('.card-body');
+            var md = card.querySelector('.markdown-body');
+            var text = md ? md.textContent : '';
+            navigator.clipboard.writeText(text).then(function () {
+                var icon = btn.querySelector('i');
+                var orig = icon.className;
+                icon.className = 'feather-check fs-12 text-success';
+                setTimeout(function () { icon.className = orig; }, 1500);
+            });
+        },
+    };
+</script>
+{% endblock %}

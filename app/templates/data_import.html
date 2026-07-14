@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}SGE - Importar Dados{% endblock %}
+{% block page_title %}Importar Produtos{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+    <li class="breadcrumb-item">Importar</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    html.app-skin-dark .form-select { background-color: #1c2438 !important; color: #fff !important; border-color: #1b2436 !important; }
+    html.app-skin-dark .form-select option { background-color: #1c2438 !important; color: #fff !important; }
+    html.app-skin-dark .form-select:focus { border-color: #3454d1 !important; box-shadow: 0 0 0 0.2rem rgba(52,84,209,.25) !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+{% for message in messages %}
+<div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="feather-upload me-2"></i>Upload</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Arquivo CSV ou Excel</label>
+                        <input type="file" class="form-control" name="file" accept=".csv,.xlsx,.xls" required>
+                        <div class="text-muted fs-11 mt-1">Formatos aceitos: .csv, .xlsx, .xls</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="feather-upload me-2"></i>Upload & Detectar</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="feather-info me-2"></i>Instruções</h5>
+            </div>
+            <div class="card-body">
+                <ul class="fs-13 mb-0">
+                    <li class="mb-2">Envie um CSV ou Excel com dados de produtos.</li>
+                    <li class="mb-2">A IA detecta automaticamente o mapeamento das colunas.</li>
+                    <li class="mb-2">Voce pode ajustar o mapeamento antes de confirmar.</li>
+                    <li class="mb-2">Colunas esperadas: <strong>nome/título</strong>, categoria, marca, preco_custo, preco_venda, quantidade.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        {% if columns %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="feather-eye me-2"></i>Preview & Mapeamento</h5>
+            </div>
+            <div class="card-body p-0">
+                <form method="post" action="{% url 'data_import_confirm' %}">
+                    {% csrf_token %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Coluna no Arquivo</th>
+                                    <th>Campo no Sistema</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for col in columns %}
+                                <tr>
+                                    <td><code>{{ col }}</code></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="mapping_{{ col }}">
+                                            <option value="">-- ignorar --</option>
+                                            {% for field in 'title,category_name,brand_name,cost_price,selling_price,quantity,serie_number'|split:',' %}
+                                            <option value="{{ field }}" {% if field_mapping and field_mapping|get_item:field == col %}selected{% endif %}>{{ field|field_label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if preview %}
+                    <div class="p-3 border-top">
+                        <h6 class="fw-semibold mb-2">Preview (primeiras {{ preview|length }} linhas)</h6>
+                        <div class="table-responsive" style="max-height:300px;overflow-y:auto;">
+                            <table class="table table-sm table-bordered mb-0 fs-12">
+                                <thead>
+                                    <tr>
+                                        {% for col in columns %}
+                                        <th>{{ col }}</th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in preview %}
+                                    <tr>
+                                        {% for col in columns %}
+                                        <td>{{ row|get_item:col }}</td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="p-3 border-top text-end">
+                        <button type="submit" class="btn btn-success"><i class="feather-check me-2"></i>Confirmar Importacao</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

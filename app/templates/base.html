@@ -1,41 +1,157 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="pt-br" data-bs-theme="dark">
-
+<html lang="pt-br" class="app-skin-{{ user_theme|default:'dark' }}" data-bs-theme="{{ user_theme|default:'dark' }}">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}{% endblock %}</title>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}SGE{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" type="text/css" href="{% static 'duralux/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'duralux/css/vendors.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'duralux/css/theme.min.css' %}">
+    <script>
+        (function () {
+            var t = '{{ user_theme|default:"dark" }}';
+            var html = document.documentElement;
+            html.classList.remove('app-skin-dark', 'app-skin-light');
+            html.classList.add('app-skin-' + t);
+            html.setAttribute('data-bs-theme', t);
+            localStorage.setItem('app-skin-dark', 'app-skin-' + t);
+        })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js" defer></script>
+    <style>
+        [class*="feather-"] { font-family: 'bootstrap-icons' !important; }
+        .markdown-body { line-height: 1.6; }
+        .markdown-body h1, .markdown-body h2, .markdown-body h3,
+        .markdown-body h4, .markdown-body h5 { margin-top: 1rem; margin-bottom: .5rem; }
+        .markdown-body ul, .markdown-body ol { padding-left: 1.5rem; margin-bottom: .5rem; }
+        .markdown-body li { margin-bottom: .25rem; }
+        .markdown-body p { margin-bottom: .5rem; }
+        .markdown-body code { background: rgba(0,0,0,.08); padding: .1rem .35rem; border-radius: .25rem; font-size: .85em; }
+        .markdown-body pre { background: rgba(0,0,0,.06); padding: .75rem; border-radius: .5rem; overflow-x: auto; }
+        .markdown-body pre code { background: none; padding: 0; }
+        .markdown-body table { width: 100%; border-collapse: collapse; margin-bottom: .5rem; }
+        .markdown-body th, .markdown-body td { border: 1px solid var(--bs-border-color, #dee2e6); padding: .35rem .5rem; }
+        .markdown-body blockquote { border-left: 3px solid var(--bs-primary, #50a5f5); padding-left: 1rem; margin: .5rem 0; opacity: .8; }
 
-  <!-- Tailwind CSS CDN -->
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
-  <!-- Preserve Bootstrap for any existing components (optional) -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
+        .chat-bubble-user {
+            max-width: 70%; padding: .5rem .85rem;
+            background: #50a5f5; color: #fff; border-radius: 1rem 1rem .25rem 1rem;
+        }
+        html.app-skin-dark .chat-bubble-assistant {
+            background: #2a2d3a !important; color: #e5e7eb !important; border-radius: 1rem 1rem 1rem .25rem;
+        }
+        html:not(.app-skin-dark) .chat-bubble-assistant {
+            background: #f1f3f5 !important; color: #3f4047 !important; border-radius: 1rem 1rem 1rem .25rem;
+        }
+        .chat-bubble-assistant { max-width: 75%; padding: .5rem .85rem; }
+        .chat-scroll { max-height: calc(100vh - 320px); overflow-y: auto; }
+        .sge-chat-actions { opacity: 0; transition: opacity .15s ease; }
+        .sge-chat-row:hover .sge-chat-actions { opacity: 1; }
+        .bi-arrow-clockwise.sge-spin, .feather-loader { animation: sge-spin 1s linear infinite; display: inline-block; }
+        @keyframes sge-spin { to { transform: rotate(360deg); } }
+
+        html, body { height: 100%; overflow: hidden; margin: 0; padding: 0; }
+        .nxl-container { height: 100vh; overflow: hidden; }
+        .nxl-container .nxl-content { height: 100%; overflow: hidden; display: flex; flex-direction: column; }
+        .nxl-container .nxl-content .main-content { flex: 1; overflow-y: auto; min-height: 0; }
+        .nxl-container .nxl-content .page-header,
+        .nxl-container .nxl-content ._footer { flex-shrink: 0; }
+    </style>
+    {% block extra_css %}{% endblock %}
 </head>
+<body class="theme-{{ user_theme|default:'dark' }}">
 
-<body>
-  {% include 'components/navbar.html' %}
-
-  <div class="container-fluid">
     {% if user.is_authenticated %}
-      {% include 'components/_sidebar.html' %}
+        {% block sidebar %}{% include 'components/_sidebar.html' %}{% endblock %}
+        {% include 'components/navbar.html' %}
+
+        <main class="nxl-container">
+            <div class="nxl-content">
+                <div class="page-header">
+                    <div class="page-header-left d-flex align-items-center">
+                        <div class="page-header-title">
+                            <h5 class="m-b-10">{% block page_title %}{% endblock %}</h5>
+                        </div>
+                        <ul class="breadcrumb">
+                            {% block breadcrumb %}{% endblock %}
+                        </ul>
+                    </div>
+                    <div class="page-header-right ms-auto">
+                        <div class="page-header-right-items">
+                            <div class="d-flex d-md-none">
+                                <a href="javascript:void(0)" class="page-header-right-close-toggle">
+                                    <i class="feather-arrow-left me-2"></i>
+                                    <span>Voltar</span>
+                                </a>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                                {% block page_actions %}{% endblock %}
+                            </div>
+                        </div>
+                        <div class="d-md-none d-flex align-items-center">
+                            <a href="javascript:void(0)" class="page-header-right-open-toggle">
+                                <i class="feather-align-right fs-20"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="main-content">
+                    {% block content %}{% endblock %}
+                </div>
+
+                {% include 'components/_footer.html' %}
+            </div>
+        </main>
+    {% else %}
+        {% block login_content %}{% endblock %}
     {% endif %}
 
-      <div class="col py-3">
-
-        <div class="container mt-4">
-          <main>
-            {% block content %}
-            {% endblock %}
-          </main>
-        </div>
-
-      </div>
-    </div>
-  </div>
-  {% include 'components/_footer.html' %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'duralux/js/vendors.min.js' %}"></script>
+    <script src="{% static 'duralux/js/common-init.min.js' %}"></script>
+    <script src="{% static 'duralux/js/theme-customizer-init.min.js' %}"></script>
+    <script>
+        (function () {
+            var FEATHER_TO_BI = {
+                'feather-airplay':'bi-tv','feather-message-circle':'bi-chat-dots','feather-message-square':'bi-chat-square-text','feather-cpu':'bi-cpu','feather-box':'bi-box','feather-tag':'bi-tag','feather-layers':'bi-layers','feather-truck':'bi-truck','feather-log-in':'bi-box-arrow-in-right','feather-log-out':'bi-box-arrow-right','feather-align-left':'bi-text-left','feather-align-right':'bi-list-nested','feather-arrow-right':'bi-arrow-right','feather-arrow-left':'bi-arrow-left','feather-maximize':'bi-arrows-fullscreen','feather-minimize':'bi-fullscreen-exit','feather-moon':'bi-moon','feather-sun':'bi-sun','feather-plus':'bi-plus-lg','feather-search':'bi-search','feather-eye':'bi-eye','feather-edit-2':'bi-pencil','feather-edit-3':'bi-pencil-square','feather-trash-2':'bi-trash3','feather-trash':'bi-trash','feather-filter':'bi-funnel','feather-save':'bi-save','feather-x':'bi-x-lg','feather-alert-triangle':'bi-exclamation-triangle','feather-alert-circle':'bi-exclamation-circle','feather-check':'bi-check-lg','feather-copy':'bi-clipboard','feather-refresh-cw':'bi-arrow-clockwise','feather-send':'bi-send','feather-dollar-sign':'bi-currency-dollar','feather-trending-up':'bi-graph-up-arrow','feather-award':'bi-award','feather-shopping-cart':'bi-cart','feather-package':'bi-box-seam','feather-settings':'bi-gear','feather-user':'bi-person','feather-lock':'bi-lock','feather-bell':'bi-bell','feather-activity':'bi-activity','feather-more-vertical':'bi-three-dots-vertical','feather-chevron-right':'bi-chevron-right','feather-chevron-down':'bi-chevron-down','feather-command':'bi-command','feather-loader':'bi-arrow-clockwise sge-spin','feather-inbox':'bi-inbox','feather-feather':'bi-feather','feather-briefcase':'bi-briefcase','feather-users':'bi-people','feather-cast':'bi-cast','feather-life-buoy':'bi-life-preserver','feather-power':'bi-power','feather-at-sign':'bi-at','feather-layout':'bi-layout-text-window','feather-droplet':'bi-droplet','feather-navigation':'bi-navigation','feather-database':'bi-database','feather-grid':'bi-grid-3x3','feather-zap':'bi-zap','feather-type':'bi-type','feather-sunrise':'bi-sunrise'
+            };
+            function replaceIcons() {
+                document.querySelectorAll('[class*="feather-"]').forEach(function (el) {
+                    var toRemove = [];
+                    el.classList.forEach(function (cls) {
+                        if (cls.indexOf('feather-') === 0) {
+                            toRemove.push(cls);
+                            var bi = FEATHER_TO_BI[cls];
+                            if (bi) bi.split(' ').forEach(function (c) { el.classList.add(c); });
+                        }
+                    });
+                    toRemove.forEach(function (c) { el.classList.remove(c); });
+                });
+            }
+            document.addEventListener('DOMContentLoaded', function () {
+                replaceIcons();
+                if (window.marked) {
+                    document.querySelectorAll('[data-md]').forEach(function (el) {
+                        try { el.innerHTML = window.marked.parse(el.textContent); }
+                        catch (e) { el.textContent = el.textContent; }
+                    });
+                }
+            });
+            var obs = new MutationObserver(function (muts) {
+                for (var i = 0; i < muts.length; i++) {
+                    if (muts[i].addedNodes.length) { replaceIcons(); break; }
+                }
+            });
+            document.addEventListener('DOMContentLoaded', function () {
+                obs.observe(document.body, { childList: true, subtree: true });
+            });
+            window.SGEReplaceIcons = replaceIcons;
+        })();
+    </script>
+    {% block extra_js %}{% endblock %}
 </body>
-
 </html>

@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}SGE - Convidar Funcionario{% endblock %}
+{% block page_title %}Convidar Funcionario{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+    <li class="breadcrumb-item">Convites</li>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+{% for message in messages %}
+<div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="card stretch stretch-full">
+            <div class="card-header">
+                <h5 class="card-title"><i class="feather-send me-2"></i>Novo Convite</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Email do funcionario</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="feather-at-sign"></i></span>
+                            <input type="email" class="form-control" name="email" placeholder="email@empresa.com" required>
+                        </div>
+                        <div class="text-muted fs-11 mt-1">O funcionario recebera um link para criar a conta vinculada a sua empresa.</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="feather-send me-2"></i>Enviar Convite</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card stretch stretch-full">
+            <div class="card-header">
+                <h5 class="card-title">Convites Enviados</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr class="border-b">
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Link</th>
+                                <th>Data</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inv in invitations %}
+                            <tr>
+                                <td>{{ inv.email }}</td>
+                                <td>
+                                    {% if inv.accepted %}
+                                    <span class="badge bg-soft-success text-success">Aceito</span>
+                                    {% else %}
+                                    <span class="badge bg-soft-warning text-warning">Pendente</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'tenants:employee_signup' inv.token %}" class="text-primary fs-12">/convite/{{ inv.token|slice:":8" }}...</a>
+                                </td>
+                                <td>{{ inv.created_at|date:'d/m/Y H:i' }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center text-muted py-3">Nenhum convite enviado.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
