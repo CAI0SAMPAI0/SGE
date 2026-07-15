@@ -18,8 +18,8 @@ mccabe==0.7.0
 openai==1.97.0
 psycopg2-binary==2.9.10
 pycodestyle==2.11.1
-pydantic==2.10.6
-pydantic_core==2.27.2
+pydantic>=2.10
+pydantic-core>=2.27
 pyflakes==3.2.0
 PyJWT==2.10.1
 python-dotenv==1.1.1
