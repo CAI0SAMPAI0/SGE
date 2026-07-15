@@ -1,8 +1,7 @@
 <div class="mb-4">
-    <button class="btn btn-sm btn-outline-primary w-100 text-start d-flex align-items-center justify-content-between px-3 py-2"
+    <button class="btn btn-sm btn-outline-primary w-100 text-start d-flex align-items-center justify-content-between px-3 py-2 collapsed"
             id="sgeAgentToggle"
-            data-bs-toggle="collapse"
-            data-bs-target="#sgeAgentCard"
+            role="button"
             aria-expanded="false"
             aria-controls="sgeAgentCard">
         <span><i class="feather-cpu me-2"></i>SGE Agent</span>
@@ -35,11 +34,20 @@
         var card = document.getElementById('sgeAgentCard');
         var chevron = document.getElementById('sgeAgentChevron');
         if (toggle && card) {
-            card.addEventListener('show.bs.collapse', function () {
-                if (chevron) chevron.style.transform = 'rotate(90deg)';
-            });
-            card.addEventListener('hide.bs.collapse', function () {
-                if (chevron) chevron.style.transform = 'rotate(0deg)';
+            toggle.addEventListener('click', function (e) {
+                e.preventDefault();
+                var isOpen = card.classList.contains('show');
+                if (isOpen) {
+                    card.classList.remove('show');
+                    toggle.classList.add('collapsed');
+                    toggle.setAttribute('aria-expanded', 'false');
+                    if (chevron) chevron.style.transform = 'rotate(0deg)';
+                } else {
+                    card.classList.add('show');
+                    toggle.classList.remove('collapsed');
+                    toggle.setAttribute('aria-expanded', 'true');
+                    if (chevron) chevron.style.transform = 'rotate(90deg)';
+                }
             });
         }
         function renderResult(text) {
