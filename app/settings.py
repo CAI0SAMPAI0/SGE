@@ -21,6 +21,8 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'unsafe-default-key')
 DEBUG = True
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
+if 'healthcheck.railway.app' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('healthcheck.railway.app')
 
 CSRF_TRUSTED_ORIGINS = [
     'https://*.railway.app',
@@ -100,15 +102,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'app.wsgi.application'
-
-
-# Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-#
-# Prioridade de configuracao do banco:
-#   1. POSTGRES_URL (NeonDB / qualquer Postgres de producao)
-#   2. Container local ``sge_db`` quando DJANGO_ENV == 'prd'
-#   3. SQLite local (dev)
 
 
 def _build_postgres_config(url):
