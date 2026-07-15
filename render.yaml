@@ -15,9 +15,7 @@ services:
       - key: WAHA_BASE_URL
         value: https://waha-noweb-sge.onrender.com
       - key: POSTGRES_URL
-        fromDatabase:
-          name: sge-postgres
-          property: connectionString
+        sync: false
       - key: SECRET_KEY
         sync: false
       - key: GROQ_API_KEY
@@ -38,9 +36,3 @@ services:
         sync: false
       - key: PYTHON_VERSION
         value: "3.13"
-
-databases:
-  - name: sge-postgres
-    plan: free
-    databaseName: sge
-    user: sge_user
