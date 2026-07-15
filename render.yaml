@@ -2,7 +2,6 @@ services:
   - type: web
     name: sge-web
     runtime: python
-    runtimeVersion: "3.13"
     plan: free
     region: oregon
     buildCommand: pip install -r requirements.txt
