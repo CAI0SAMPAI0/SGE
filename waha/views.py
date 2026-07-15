@@ -1,4 +1,5 @@
 import json
+import logging
 
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -8,6 +9,8 @@ from django.views.decorators.http import require_POST
 
 from .models import WahaSession
 from .service import create_session, delete_session, get_qr_code, get_session_status, send_whatsapp
+
+logger = logging.getLogger(__name__)
 
 
 @login_required(login_url='login')
@@ -52,9 +55,11 @@ def waha_connect(request):
             existing.delete()
         result = create_session(tenant.id, request)
         if 'error' in result:
+            logger.error(f"[WAHA CONNECT ERROR] Failed to create session: {result['error']}")
             return JsonResponse(result, status=500)
         return JsonResponse(result)
     except Exception as e:
+        logger.exception("[WAHA CONNECT EXCEPTION] Internal error in waha_connect")
         return JsonResponse({'error': f'Erro interno: {str(e)}'}, status=500)
 
 

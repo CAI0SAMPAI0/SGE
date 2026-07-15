@@ -1,11 +1,14 @@
 import base64
 import json
+import logging
 import time
 import uuid
 
 import httpx
 from django.conf import settings
 from django.urls import reverse
+
+logger = logging.getLogger(__name__)
 
 
 def _waha_url(path):
@@ -57,6 +60,7 @@ def create_session(tenant_id, request=None):
         )
         resp.raise_for_status()
     except Exception as e:
+        logger.exception(f"[WAHA API EXCEPTION] Failed to connect or create session for tenant {tenant_id}")
         return {'error': f'Falha ao criar sessão: {e}'}
 
     WahaSession.objects.update_or_create(

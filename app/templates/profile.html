@@ -198,12 +198,22 @@
                 method: 'POST',
                 headers: { 'X-CSRFToken': getCSRF(), 'Accept': 'application/json' },
             })
-            .then(function(r) { return r.json(); })
+            .then(function(r) {
+                if (!r.ok) {
+                    return r.json().then(function(errData) {
+                        throw new Error(errData.error || 'Erro no servidor (Status: ' + r.status + ')');
+                    }).catch(function() {
+                        throw new Error('Erro no servidor (Status: ' + r.status + ')');
+                    });
+                }
+                return r.json();
+            })
             .then(function(data) {
-                if (data.error) { alert('Erro: ' + data.error + '\n\nCertifique-se de que o waha:noweb está rodando.\nExecute: docker compose up -d sge_waha'); return; }
                 loadWahaStatus();
             })
-            .catch(function() { alert('Falha ao conectar. Verifique se o waha:noweb está rodando (docker compose up -d sge_waha).'); })
+            .catch(function(err) {
+                alert('Falha ao conectar: ' + err.message + '\n\nCertifique-se de que o waha:noweb está rodando e acessível.');
+            })
             .finally(function() { btn.disabled = false; btn.innerHTML = '<i class="feather-cast me-2"></i>Conectar WhatsApp'; });
         };
 
