@@ -18,6 +18,7 @@
     {% endfor %}
 {% endif %}
 
+<div id="profile-top"></div>
 <div class="row g-3">
     <div class="col-lg-4">
         <div class="card">
@@ -55,8 +56,8 @@
                     <input type="hidden" name="action" value="profile">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold">Nome</label>
-                            <input type="text" class="form-control" name="first_name" value="{{ user.first_name }}">
+                            <label class="form-label fw-semibold" for="id_first_name">Nome</label>
+                            <input type="text" class="form-control" name="first_name" id="id_first_name" value="{{ user.first_name }}" autofocus>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-semibold">Sobrenome</label>
@@ -87,13 +88,13 @@
                 <h5 class="card-title"><i class="feather-lock me-2"></i>Alterar Senha</h5>
             </div>
             <div class="card-body">
-                <form method="post">
+                <form method="post" id="password-form">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="password">
                     {% for field in password_form %}
                     <div class="mb-3">
                         <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                        {% render_field field class="form-control" %}
+                        {% render_field field class="form-control" autocomplete="new-password" %}
                         {% if field.errors %}<div class="text-danger fs-12 mt-1">{{ field.errors|join:", " }}</div>{% endif %}
                     </div>
                     {% endfor %}
@@ -101,6 +102,149 @@
                 </form>
             </div>
         </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title"><i class="feather-cast me-2"></i>WhatsApp</h5>
+            </div>
+            <div class="card-body" id="waha-section">
+                <div id="waha-loading" class="text-muted">Carregando...</div>
+                <div id="waha-disconnected" class="d-none">
+                    <p class="text-muted">Conecte seu WhatsApp para enviar convites automáticos.</p>
+                    <button class="btn btn-success" onclick="window.connectWaha()">
+                        <i class="feather-cast me-2"></i>Conectar WhatsApp
+                    </button>
+                    <div id="waha-qr-container" class="mt-3 d-none text-center">
+                        <p class="fw-semibold">Escaneie o QR Code com seu WhatsApp:</p>
+                        <div id="waha-qr-code" class="p-3 bg-white d-inline-block rounded"></div>
+                        <p class="text-muted fs-12 mt-2">Abra WhatsApp > Menu > WhatsApp Web > Escanear</p>
+                    </div>
+                    <div id="waha-waiting" class="mt-3 text-center d-none">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="text-muted mt-2">Aguardando leitura do QR Code...</p>
+                    </div>
+                </div>
+                <div id="waha-connected" class="d-none">
+                    <div class="alert alert-success d-flex align-items-center gap-2">
+                        <i class="feather-check-circle"></i>
+                        <span>WhatsApp conectado!</span>
+                    </div>
+                    <button class="btn btn-outline-danger btn-sm" onclick="window.disconnectWaha()">
+                        <i class="feather-power me-1"></i>Desconectar
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+<script>
+    (function() {
+        function focusProfile() {
+            window.scrollTo(0, 0);
+            var el = document.getElementById('id_first_name');
+            if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+            var pwForm = document.getElementById('password-form');
+            if (pwForm) {
+                pwForm.querySelectorAll('input').forEach(function(inp) {
+                    inp.removeAttribute('autofocus');
+                    inp.tabIndex = -1;
+                    inp.blur();
+                });
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', focusProfile);
+        } else {
+            focusProfile();
+        }
+        setTimeout(focusProfile, 100);
+        setTimeout(focusProfile, 300);
+
+        function getCSRF() {
+            var m = document.cookie.match(/csrftoken=([^;]+)/);
+            return m ? m[1] : '';
+        }
+
+        function updateWahaUI(data) {
+            var loading = document.getElementById('waha-loading');
+            var discon = document.getElementById('waha-disconnected');
+            var con = document.getElementById('waha-connected');
+            var qrContainer = document.getElementById('waha-qr-container');
+            var qrEl = document.getElementById('waha-qr-code');
+            var waiting = document.getElementById('waha-waiting');
+            loading.classList.add('d-none');
+            if (data.is_connected) {
+                discon.classList.add('d-none');
+                con.classList.remove('d-none');
+            } else {
+                con.classList.add('d-none');
+                discon.classList.remove('d-none');
+                if (data.qr_code) {
+                    qrContainer.classList.remove('d-none');
+                    waiting.classList.remove('d-none');
+                    qrEl.innerHTML = '<img src="data:image/png;base64,' + data.qr_code + '" class="img-fluid" style="max-width:256px" alt="QR Code WhatsApp">';
+                } else {
+                    qrContainer.classList.add('d-none');
+                    waiting.classList.add('d-none');
+                }
+            }
+        }
+
+        window.connectWaha = function() {
+            var btn = document.querySelector('#waha-disconnected .btn-success');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="feather-loader me-2"></i>Conectando...';
+            fetch('/api/waha/connect/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCSRF(), 'Accept': 'application/json' },
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.error) { alert('Erro: ' + data.error + '\n\nCertifique-se de que o waha:noweb está rodando.\nExecute: docker compose up -d sge_waha'); return; }
+                loadWahaStatus();
+            })
+            .catch(function() { alert('Falha ao conectar. Verifique se o waha:noweb está rodando (docker compose up -d sge_waha).'); })
+            .finally(function() { btn.disabled = false; btn.innerHTML = '<i class="feather-cast me-2"></i>Conectar WhatsApp'; });
+        };
+
+        window.disconnectWaha = function() {
+            if (!confirm('Desconectar WhatsApp?')) return;
+            fetch('/api/waha/disconnect/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCSRF(), 'Accept': 'application/json' },
+            })
+            .then(function(r) { return r.json(); })
+            .then(function() { loadWahaStatus(); });
+        };
+
+        var wahaPollTimer = null;
+
+        function loadWahaStatus() {
+            var loading = document.getElementById('waha-loading');
+            var discon = document.getElementById('waha-disconnected');
+            var con = document.getElementById('waha-connected');
+            loading.classList.remove('d-none');
+            discon.classList.add('d-none');
+            con.classList.add('d-none');
+            fetch('/api/waha/status/', { headers: { 'Accept': 'application/json' } })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    updateWahaUI(data);
+                    if (data.status === 'SCAN_QR_CODE') {
+                        if (!wahaPollTimer) {
+                            wahaPollTimer = setInterval(loadWahaStatus, 5000);
+                        }
+                    } else {
+                        if (wahaPollTimer) {
+                            clearInterval(wahaPollTimer);
+                            wahaPollTimer = null;
+                        }
+                    }
+                })
+                .catch(function() { loading.textContent = 'Erro ao carregar status do WhatsApp.'; });
+        }
+
+        loadWahaStatus();
+    })();
+</script>
 {% endblock %}

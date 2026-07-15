@@ -23,6 +23,7 @@ class Tenant(models.Model):
 class Invitation(models.Model):
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name='invitations')
     email = models.EmailField()
+    phone = models.CharField(max_length=20, blank=True, help_text='WhatsApp do convidado (com DDD, ex: 11999999999)')
     token = models.CharField(max_length=64, unique=True)
     invited_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

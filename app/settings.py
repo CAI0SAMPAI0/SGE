@@ -41,6 +41,7 @@ INSTALLED_APPS = [
 
     'tenants',
     'authentication',
+    'waha',
     'brands',
     'categories',
     'suppliers',
@@ -58,6 +59,7 @@ LOGOUT_REDIRECT_URL = '/login/'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -219,6 +221,20 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_TIMEZONE = 'America/Sao_Paulo'
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+# WAHA
+WAHA_BASE_URL = os.getenv('WAHA_BASE_URL', 'http://localhost:3000' if ENVIRONMENT == 'dev' else 'http://waha:3000')
+WAHA_WEBHOOK_URL = os.getenv('WAHA_WEBHOOK_URL', '')
+WAHA_API_KEY = os.getenv('WAHA_API_KEY', '')
+
+# Email
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = os.getenv('SMTP_HOST', '')
+EMAIL_PORT = int(os.getenv('SMTP_PORT', 587))
+EMAIL_HOST_USER = os.getenv('SMTP_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('SMTP_PASSWORD', '')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+DEFAULT_FROM_EMAIL = os.getenv('SMTP_FROM', '')
 
 # Upload
 MEDIA_URL = '/media/'

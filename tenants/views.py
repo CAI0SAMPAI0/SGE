@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.mail import send_mail
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
@@ -22,16 +23,16 @@ def company_signup(request):
         last_name = request.POST.get('last_name', '').strip()
 
         if not company_name or not username or not email or not password:
-            messages.error(request, 'Preencha todos os campos obrigatorios.')
-            return redirect('company_signup')
+            messages.error(request, 'Preencha todos os campos obrigatórios.')
+            return redirect('tenants:company_signup')
 
         if User.objects.filter(username=username).exists():
-            messages.error(request, 'Usuario ja existe.')
-            return redirect('company_signup')
+            messages.error(request, 'Usuário já existe.')
+            return redirect('tenants:company_signup')
 
         if User.objects.filter(email=email).exists():
-            messages.error(request, 'Email ja cadastrado.')
-            return redirect('company_signup')
+            messages.error(request, 'Email já cadastrado.')
+            return redirect('tenants:company_signup')
 
         user = User.objects.create_user(
             username=username, email=email, password=password,
@@ -62,12 +63,12 @@ def employee_signup(request, token):
         last_name = request.POST.get('last_name', '').strip()
 
         if not username or not password:
-            messages.error(request, 'Preencha usuario e senha.')
-            return redirect('employee_signup', token=token)
+            messages.error(request, 'Preencha usuário e senha.')
+            return redirect('tenants:employee_signup', token=token)
 
         if User.objects.filter(username=username).exists():
-            messages.error(request, 'Usuario ja existe.')
-            return redirect('employee_signup', token=token)
+            messages.error(request, 'Usuário já existe.')
+            return redirect('tenants:employee_signup', token=token)
 
         user = User.objects.create_user(
             username=username, email=inv.email, password=password,
@@ -79,7 +80,7 @@ def employee_signup(request, token):
         inv.accepted = True
         inv.save()
         login(request, user)
-        messages.success(request, f'Bem-vindo a {inv.tenant.name}!')
+        messages.success(request, f'Bem-vindo à {inv.tenant.name}!')
         return redirect('home')
 
     return render(request, 'tenants/employee_signup.html', {'invitation': inv})
@@ -88,28 +89,72 @@ def employee_signup(request, token):
 @login_required(login_url='login')
 def invite_employee(request):
     if not hasattr(request.user, 'profile') or not request.user.profile.tenant:
-        messages.error(request, 'Voce nao pertence a uma empresa.')
-        return redirect('home')
+        messages.warning(request, 'Você não pertence a uma empresa. Crie uma empresa para convidar funcionários.')
+        return redirect('tenants:company_signup')
 
     if request.method == 'POST':
         email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone', '').strip()
         if not email:
-            messages.error(request, 'Email obrigatorio.')
-            return redirect('invite_employee')
+            messages.error(request, 'Email é obrigatório.')
+            return redirect('tenants:invite_employee')
 
         if User.objects.filter(email=email).exists():
-            messages.error(request, 'Este email ja esta cadastrado.')
-            return redirect('invite_employee')
+            messages.error(request, 'Este email já está cadastrado.')
+            return redirect('tenants:invite_employee')
 
         token = uuid.uuid4().hex
         Invitation.objects.create(
             tenant=request.user.profile.tenant,
             email=email,
+            phone=phone,
             token=token,
             invited_by=request.user,
         )
-        messages.success(request, f'Convite enviado para {email}. Link: /convite/{token}')
-        return redirect('invite_employee')
+
+        tenant = request.user.profile.tenant
+        invite_url = request.build_absolute_uri(f'/convite/{token}')
+        sent_whatsapp = False
+
+        # Envia WhatsApp se tiver telefone do convidado e sessão conectada
+        if phone:
+            try:
+                from waha.models import WahaSession
+                from waha.service import send_whatsapp
+                session = WahaSession.objects.get(tenant=tenant, is_connected=True)
+                whatsapp_msg = (
+                    f'Olá! Você foi convidado(a) por {request.user.get_full_name() or request.user.username} '
+                    f'para entrar na empresa "{tenant.name}".\n\n'
+                    f'Clique no link para criar sua conta: {invite_url}'
+                )
+                result = send_whatsapp(session.session_name, phone, whatsapp_msg)
+                sent_whatsapp = result.get('success', False)
+            except WahaSession.DoesNotExist:
+                pass
+            except Exception:
+                pass
+
+        # Envia email
+        try:
+            subject = f'Convite para entrar em {tenant.name}'
+            body = (
+                f'Olá!\n\n'
+                f'Você foi convidado(a) por {request.user.get_full_name() or request.user.username} '
+                f'para entrar na empresa "{tenant.name}".\n\n'
+                f'Clique no link abaixo para criar sua conta:\n{invite_url}\n\n'
+                f'Atenciosamente,\nEquipe SGE'
+            )
+            send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [email])
+            if sent_whatsapp:
+                messages.success(request, f'Convite enviado por WhatsApp e Email para {phone}.')
+            else:
+                messages.success(request, f'Convite enviado por Email para {email}.')
+        except Exception as e:
+            messages.success(request, f'Convite gerado! Link: {invite_url}')
+            if sent_whatsapp:
+                messages.info(request, 'Convite também enviado por WhatsApp.')
+
+        return redirect('tenants:invite_employee')
 
     invitations = Invitation.objects.filter(
         tenant=request.user.profile.tenant,

@@ -105,6 +105,23 @@ services:
         condition: service_started
     restart: unless-stopped
 
+  sge_waha:
+    image: devlikeapro/waha:noweb
+    container_name: sge_waha
+    environment:
+      WHATSAPP_DEFAULT_ENGINE: NOWEB
+      WAHA_PRINT_QR: "true"
+      WAHA_API_KEY: ${WAHA_API_KEY}
+      WAHA_DASHBOARD_USERNAME: admin
+      WAHA_DASHBOARD_PASSWORD: ${WAHA_DASHBOARD_PASSWORD}
+      WHATSAPP_SWAGGER_USERNAME: admin
+      WHATSAPP_SWAGGER_PASSWORD: ${WAHA_DASHBOARD_PASSWORD}
+    volumes:
+      - sge_waha_data:/app/.sessions
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
   sge_service:
     build: .
     container_name: sge_service
@@ -130,3 +147,4 @@ services:
 volumes:
   sge_db_data:
   sge_rabbitmq_data:
+  sge_waha_data:

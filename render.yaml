@@ -1,0 +1,79 @@
+services:
+  - type: web
+    name: sge-web
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    startCommand: gunicorn app.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --log-level info
+    healthCheckPath: /login/
+    envVars:
+      - key: DJANGO_ENV
+        value: prd
+      - key: ALLOWED_HOSTS
+        value: .onrender.com
+      - key: WAHA_BASE_URL
+        value: https://waha-noweb-sge.onrender.com
+      - key: POSTGRES_URL
+        fromDatabase:
+          name: sge-postgres
+          property: connectionString
+      - key: SECRET_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: WAHA_API_KEY
+        sync: false
+      - key: CELERY_BROKER_URL
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_FROM
+        sync: false
+
+  - type: worker
+    name: sge-worker
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    startCommand: celery -A app worker -l info --beat --concurrency=1
+    envVars:
+      - key: DJANGO_ENV
+        value: prd
+      - key: POSTGRES_URL
+        fromDatabase:
+          name: sge-postgres
+          property: connectionString
+      - key: WAHA_BASE_URL
+        value: https://waha-noweb-sge.onrender.com
+      - key: SECRET_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: WAHA_API_KEY
+        sync: false
+      - key: CELERY_BROKER_URL
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_FROM
+        sync: false
+
+databases:
+  - name: sge-postgres
+    plan: free
+    databaseName: sge
+    user: sge_user
