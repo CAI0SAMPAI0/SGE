@@ -5,9 +5,10 @@ services:
     plan: free
     region: oregon
     dockerfilePath: ./Dockerfile
-    startCommand: gunicorn app.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --log-level info
     healthCheckPath: /login/
     envVars:
+      - key: SGE_SERVICE
+        value: web
       - key: DJANGO_ENV
         value: prd
       - key: ALLOWED_HOSTS
@@ -43,8 +44,9 @@ services:
     plan: free
     region: oregon
     dockerfilePath: ./Dockerfile
-    startCommand: celery -A app worker -l info --beat --concurrency=1
     envVars:
+      - key: SGE_SERVICE
+        value: worker
       - key: DJANGO_ENV
         value: prd
       - key: POSTGRES_URL
