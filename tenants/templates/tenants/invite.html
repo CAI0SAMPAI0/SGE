@@ -61,6 +61,7 @@
                                 <th>Status</th>
                                 <th>Link</th>
                                 <th>Data</th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -78,9 +79,19 @@
                                     <a href="{% url 'tenants:employee_signup' inv.token %}" class="text-primary fs-12">/convite/{{ inv.token|slice:":8" }}...</a>
                                 </td>
                                 <td>{{ inv.created_at|date:'d/m/Y H:i' }}</td>
+                                <td class="text-end">
+                                    {% if not inv.accepted %}
+                                    <form method="post" action="{% url 'tenants:delete_invitation' inv.id %}" style="display:inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-icon btn-sm text-danger" onclick="return confirm('Remover convite de {{ inv.email }}?')" title="Remover">
+                                            <i class="feather-trash-2"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% empty %}
-                            <tr><td colspan="4" class="text-center text-muted py-3">Nenhum convite enviado.</td></tr>
+                            <tr><td colspan="5" class="text-center text-muted py-3">Nenhum convite enviado.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>

@@ -6,8 +6,10 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
-from django.shortcuts import redirect, render
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from .models import Tenant, Invitation
 from app.models import UserProfile
@@ -103,16 +105,20 @@ def invite_employee(request):
             messages.error(request, 'Este email já está cadastrado.')
             return redirect('tenants:invite_employee')
 
+        tenant = request.user.profile.tenant
         token = uuid.uuid4().hex
-        Invitation.objects.create(
-            tenant=request.user.profile.tenant,
+
+        inv, created = Invitation.objects.update_or_create(
+            tenant=tenant,
             email=email,
-            phone=phone,
-            token=token,
-            invited_by=request.user,
+            defaults={
+                'phone': phone,
+                'token': token,
+                'invited_by': request.user,
+                'accepted': False,
+            },
         )
 
-        tenant = request.user.profile.tenant
         invite_url = request.build_absolute_uri(f'/convite/{token}')
         sent_whatsapp = False
 
@@ -149,7 +155,7 @@ def invite_employee(request):
                 messages.success(request, f'Convite enviado por WhatsApp e Email para {phone}.')
             else:
                 messages.success(request, f'Convite enviado por Email para {email}.')
-        except Exception as e:
+        except Exception:
             messages.success(request, f'Convite gerado! Link: {invite_url}')
             if sent_whatsapp:
                 messages.info(request, 'Convite também enviado por WhatsApp.')
@@ -160,3 +166,15 @@ def invite_employee(request):
         tenant=request.user.profile.tenant,
     ).order_by('-created_at')
     return render(request, 'tenants/invite.html', {'invitations': invitations})
+
+
+@require_POST
+@login_required(login_url='login')
+def delete_invitation(request, invitation_id):
+    if not hasattr(request.user, 'profile') or not request.user.profile.tenant:
+        return JsonResponse({'error': 'Sem empresa'}, status=400)
+
+    inv = get_object_or_404(Invitation, pk=invitation_id, tenant=request.user.profile.tenant)
+    inv.delete()
+    messages.success(request, f'Convite de {inv.email} removido.')
+    return redirect('tenants:invite_employee')
