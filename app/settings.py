@@ -22,6 +22,17 @@ DEBUG = True
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.railway.app',
+    'https://*.onrender.com',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
+extra_origins = os.getenv('CSRF_TRUSTED_ORIGINS', '')
+if extra_origins:
+    CSRF_TRUSTED_ORIGINS.extend(extra_origins.split(','))
+
 
 # Application definition
 
