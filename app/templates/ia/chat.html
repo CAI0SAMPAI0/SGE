@@ -7,6 +7,17 @@
     <li class="breadcrumb-item">SGE Agent</li>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+    html:not(.app-skin-dark) .m-header .b-brand {
+        color: var(--bs-dark, #212529) !important;
+    }
+    html.app-skin-dark .m-header .b-brand {
+        color: var(--bs-light, #f8f9fa) !important;
+    }
+</style>
+{% endblock %}
+
 {% block sidebar %}
 <nav class="nxl-navigation">
     <div class="navbar-wrapper">
