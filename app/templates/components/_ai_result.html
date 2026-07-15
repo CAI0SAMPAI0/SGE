@@ -1,25 +1,47 @@
-<div class="card stretch stretch-full mb-4">
-    <div class="card-header">
-        <h5 class="card-title">
-            <i class="feather-cpu me-2"></i>SGE Agent
-        </h5>
-        <div class="card-header-right">
-            <button id="sgeReloadBtn" type="button"
-                    class="btn btn-sm btn-light-brand"
-                    title="Gerar novo insight"
-                    onclick="window.SGEReloadAgent(this)">
-                <i class="feather-refresh-cw me-1"></i>
-                <span>Atualizar</span>
-            </button>
+<div class="mb-4">
+    <button class="btn btn-sm btn-outline-primary w-100 text-start d-flex align-items-center justify-content-between px-3 py-2"
+            id="sgeAgentToggle"
+            data-bs-toggle="collapse"
+            data-bs-target="#sgeAgentCard"
+            aria-expanded="false"
+            aria-controls="sgeAgentCard">
+        <span><i class="feather-cpu me-2"></i>SGE Agent</span>
+        <span><i class="feather-chevron-right" id="sgeAgentChevron"></i></span>
+    </button>
+    <div id="sgeAgentCard" class="collapse mt-2">
+        <div class="card stretch stretch-full">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="feather-cpu me-2"></i>SGE Agent
+                </h5>
+                <button id="sgeReloadBtn" type="button"
+                        class="btn btn-sm btn-light-brand"
+                        title="Gerar novo insight"
+                        onclick="window.SGEReloadAgent(this)">
+                    <i class="feather-refresh-cw me-1"></i>
+                    <span>Atualizar</span>
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="sgeAgentResult" class="markdown-body" data-md>{{ ai_result|default:"Nenhum insight disponível. Clique em **Atualizar** para gerar um relatório." }}</div>
+            </div>
         </div>
-    </div>
-    <div class="card-body">
-        <div id="sgeAgentResult" class="markdown-body" data-md>{{ ai_result|default:"Nenhum insight disponível. Clique em **Atualizar** para gerar um relatório." }}</div>
     </div>
 </div>
 
 <script>
     (function () {
+        var toggle = document.getElementById('sgeAgentToggle');
+        var card = document.getElementById('sgeAgentCard');
+        var chevron = document.getElementById('sgeAgentChevron');
+        if (toggle && card) {
+            card.addEventListener('show.bs.collapse', function () {
+                if (chevron) chevron.style.transform = 'rotate(90deg)';
+            });
+            card.addEventListener('hide.bs.collapse', function () {
+                if (chevron) chevron.style.transform = 'rotate(0deg)';
+            });
+        }
         function renderResult(text) {
             var el = document.getElementById('sgeAgentResult');
             if (!el) return;

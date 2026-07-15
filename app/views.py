@@ -93,7 +93,7 @@ def data_import(request):
             prompt = f"""Mapeie as colunas abaixo para os campos do sistema de estoque.
 Colunas do arquivo: {columns}
 
-Campos disponiveis: title (nome obrigatorio), category_name, brand_name, cost_price, selling_price, quantity, serie_number.
+Campos disponíveis: title (nome obrigatório), category_name, brand_name, cost_price, selling_price, quantity, serie_number.
 
 Responda APENAS JSON sem comentarios, ex: {{"title": "Nome do Produto", "quantity": "Qtd"}}
 Use null para colunas sem correspondencia. Se title nao for encontrado, use a primeira coluna."""
@@ -126,13 +126,17 @@ Use null para colunas sem correspondencia. Se title nao for encontrado, use a pr
 def data_import_confirm(request):
     file_path = request.session.get('import_file')
     if not file_path or not os.path.exists(file_path):
-        messages.error(request, 'Arquivo nao encontrado. Faca o upload novamente.')
+        messages.error(request, 'Arquivo não encontrado. Faça o upload novamente.')
         return redirect('data_import')
 
-    field_mapping = request.POST.get('mapping', '{}')
-    try:
-        field_mapping = json.loads(field_mapping)
-    except json.JSONDecodeError:
+    field_mapping = {}
+    prefix = 'mapping_'
+    for key, value in request.POST.items():
+        if key.startswith(prefix) and value:
+            col_name = key[len(prefix):]
+            system_field = value
+            field_mapping[system_field] = col_name
+    if not field_mapping:
         field_mapping = request.session.get('import_mapping', {})
 
     from .tasks import process_import
@@ -143,7 +147,7 @@ def data_import_confirm(request):
             user_id=request.user.id,
             field_mapping=field_mapping,
         )
-        messages.success(request, f'Importacao iniciada! Task ID: {task.id}')
+        messages.success(request, f'Importação iniciada! Task ID: {task.id}')
     except Exception:
         results = process_import(
             file_path=file_path,
@@ -153,7 +157,7 @@ def data_import_confirm(request):
         )
         messages.success(
             request,
-            f'Importacao concluida! {results.get("created", 0)} produtos criados.'
+            f'Importação concluída! {results.get("created", 0)} produtos criados.'
         )
         if results.get('errors'):
             for err in results['errors'][:5]:
@@ -239,11 +243,11 @@ def save_theme(request):
 def group_create(request):
     name = request.POST.get('name', '').strip()
     if not name:
-        messages.error(request, 'Nome do grupo e obrigatorio.')
+        messages.error(request, 'Nome do grupo é obrigatório.')
         return redirect('settings')
     group, created = Group.objects.get_or_create(name=name)
     if not created:
-        messages.warning(request, f'Grupo "{name}" ja existe.')
+        messages.warning(request, f'Grupo "{name}" já existe.')
     else:
         messages.success(request, f'Grupo "{name}" criado.')
     perm_ids = request.POST.getlist('permissions')
@@ -271,7 +275,7 @@ def group_delete(request, group_id):
     group = get_object_or_404(Group, pk=group_id)
     name = group.name
     group.delete()
-    messages.success(request, f'Grupo "{name}" excluido.')
+    messages.success(request, f'Grupo "{name}" excluído.')
     return redirect('settings')
 
 
@@ -289,5 +293,5 @@ def user_edit(request, user_id):
     target.save()
     group_ids = request.POST.getlist('groups')
     target.groups.set(Group.objects.filter(id__in=group_ids))
-    messages.success(request, f'Usuario "{target.username}" atualizado.')
+    messages.success(request, f'Usuário "{target.username}" atualizado.')
     return redirect('settings')

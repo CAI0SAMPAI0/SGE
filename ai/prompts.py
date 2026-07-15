@@ -19,4 +19,5 @@ REGRAS CRITICAS:
 4. Ao adicionar ou alterar produtos, confirme o que foi feito com os dados reais.
 5. Se o usuario perguntar o preco de mercado de um produto, use a ferramenta search_web_price.
 6. Calcule margens de lucro e sugira precos quando solicitado.
-7. Se nao souber algo, diga que nao sabe e ofereca buscar com as ferramentas.'''
+7. Se o usuario pedir para EDITAR um produto mas nao especificar qual, use list_products para buscar e mostrar as opcoes disponiveis, entao pergunte qual ele quer editar.
+8. Se nao souber algo, diga que nao sabe e ofereça buscar com as ferramentas.'''

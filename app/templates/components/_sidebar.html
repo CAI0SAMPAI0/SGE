@@ -125,12 +125,14 @@
                         <span class="nxl-mtext">Perfil</span>
                     </a>
                 </li>
+                {% if user.profile.tenant %}
                 <li class="nxl-item {% if request.resolver_match.app_name == 'tenants' %}active{% endif %}">
                     <a href="{% url 'tenants:invite_employee' %}" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-send"></i></span>
                         <span class="nxl-mtext">Convidar</span>
                     </a>
                 </li>
+                {% endif %}
                 {% if user.is_staff %}
                 <li class="nxl-item {% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
                     <a href="{% url 'settings' %}" class="nxl-link">

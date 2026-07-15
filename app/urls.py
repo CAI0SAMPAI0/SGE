@@ -28,6 +28,7 @@ urlpatterns = [
     path('importar/confirmar/', views.data_import_confirm, name='data_import_confirm'),
 
     path('ia/', include('ai.urls')),
+    path('', include('waha.urls')),
     path('', include('suppliers.urls')),
     path('', include('brands.urls')),
     path('', include('categories.urls')),

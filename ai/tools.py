@@ -114,6 +114,26 @@ def get_tool_schemas():
         {
             'type': 'function',
             'function': {
+                'name': 'update_product',
+                'description': 'Atualiza os dados de um produto existente (nome, marca, categoria, precos, quantidade). Use quando o usuario pedir para editar/alterar/modificar um produto.',
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'product_id': {'type': 'integer', 'description': 'ID do produto a ser editado.'},
+                        'title': {'type': 'string', 'description': 'Novo nome do produto.'},
+                        'category_name': {'type': 'string', 'description': 'Nova categoria.'},
+                        'brand_name': {'type': 'string', 'description': 'Nova marca.'},
+                        'cost_price': {'type': 'number', 'description': 'Novo preco de custo.'},
+                        'selling_price': {'type': 'number', 'description': 'Novo preco de venda.'},
+                        'quantity': {'type': 'integer', 'description': 'Nova quantidade em estoque.'},
+                    },
+                    'required': ['product_id'],
+                },
+            },
+        },
+        {
+            'type': 'function',
+            'function': {
                 'name': 'list_categories',
                 'description': 'Lista todas as categorias cadastradas.',
                 'parameters': {'type': 'object', 'properties': {}},
@@ -127,6 +147,7 @@ def execute_tool(name, args, user, tenant=None):
         'list_products': _list_products,
         'add_product': _add_product,
         'update_stock': _update_stock,
+        'update_product': _update_product,
         'get_stock_summary': _get_stock_summary,
         'list_outflows': _list_outflows,
         'search_web_price': _search_web_price,
@@ -169,8 +190,18 @@ def _list_products(args, user, tenant=None):
 
 
 def _add_product(args, user, tenant=None):
-    category, _ = Category.objects.get_or_create(name__iexact=args['category_name'], defaults={'name': args['category_name']})
-    brand, _ = Brand.objects.get_or_create(name__iexact=args['brand_name'], defaults={'name': args['brand_name']})
+    defaults_cat = {'name': args['category_name']}
+    if tenant:
+        defaults_cat['tenant'] = tenant
+    category, _ = Category.objects.get_or_create(
+        name__iexact=args['category_name'], defaults=defaults_cat
+    )
+    defaults_br = {'name': args['brand_name']}
+    if tenant:
+        defaults_br['tenant'] = tenant
+    brand, _ = Brand.objects.get_or_create(
+        name__iexact=args['brand_name'], defaults=defaults_br
+    )
     product = Product.objects.create(
         title=args['title'],
         category=category,
@@ -178,6 +209,7 @@ def _add_product(args, user, tenant=None):
         cost_price=Decimal(str(args['cost_price'])),
         selling_price=Decimal(str(args['selling_price'])),
         quantity=args['quantity'],
+        tenant=tenant,
     )
     if tenant:
         product.tenant = tenant
@@ -204,6 +236,49 @@ def _update_stock(args, user, tenant=None):
         'product_id': product.id,
         'new_quantity': product.quantity,
         'message': f'Estoque de "{product.title}" ajustado para {product.quantity} unidades.',
+    }
+
+
+def _update_product(args, user, tenant=None):
+    pid = args['product_id']
+    qs = Product.objects.select_related('brand', 'category')
+    if tenant:
+        qs = qs.filter(tenant=tenant)
+    try:
+        product = qs.get(pk=pid)
+    except Product.DoesNotExist:
+        return {'error': f'Produto ID {pid} não encontrado.'}
+
+    changed = []
+    if 'title' in args and args['title']:
+        product.title = args['title']
+        changed.append('nome')
+    if 'category_name' in args and args['category_name']:
+        cat, _ = Category.objects.get_or_create(name__iexact=args['category_name'], defaults={'name': args['category_name']})
+        product.category = cat
+        changed.append('categoria')
+    if 'brand_name' in args and args['brand_name']:
+        br, _ = Brand.objects.get_or_create(name__iexact=args['brand_name'], defaults={'name': args['brand_name']})
+        product.brand = br
+        changed.append('marca')
+    if 'cost_price' in args and args['cost_price'] is not None:
+        product.cost_price = Decimal(str(args['cost_price']))
+        changed.append('preço de custo')
+    if 'selling_price' in args and args['selling_price'] is not None:
+        product.selling_price = Decimal(str(args['selling_price']))
+        changed.append('preço de venda')
+    if 'quantity' in args and args['quantity'] is not None:
+        product.quantity = args['quantity']
+        changed.append('quantidade')
+
+    if not changed:
+        return {'error': 'Nenhum campo informado para alteração.'}
+
+    product.save()
+    return {
+        'success': True,
+        'product_id': product.id,
+        'message': f'Produto "{product.title}" atualizado: {", ".join(changed)}.',
     }
 
 
