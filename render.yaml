@@ -7,8 +7,6 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /login/
     envVars:
-      - key: SGE_SERVICE
-        value: web
       - key: DJANGO_ENV
         value: prd
       - key: ALLOWED_HOSTS
@@ -19,42 +17,6 @@ services:
         fromDatabase:
           name: sge-postgres
           property: connectionString
-      - key: SECRET_KEY
-        sync: false
-      - key: GROQ_API_KEY
-        sync: false
-      - key: WAHA_API_KEY
-        sync: false
-      - key: CELERY_BROKER_URL
-        sync: false
-      - key: SMTP_HOST
-        sync: false
-      - key: SMTP_USER
-        sync: false
-      - key: SMTP_PASSWORD
-        sync: false
-      - key: SMTP_PORT
-        value: "587"
-      - key: SMTP_FROM
-        sync: false
-
-  - type: worker
-    name: sge-worker
-    env: docker
-    plan: free
-    region: oregon
-    dockerfilePath: ./Dockerfile
-    envVars:
-      - key: SGE_SERVICE
-        value: worker
-      - key: DJANGO_ENV
-        value: prd
-      - key: POSTGRES_URL
-        fromDatabase:
-          name: sge-postgres
-          property: connectionString
-      - key: WAHA_BASE_URL
-        value: https://waha-noweb-sge.onrender.com
       - key: SECRET_KEY
         sync: false
       - key: GROQ_API_KEY

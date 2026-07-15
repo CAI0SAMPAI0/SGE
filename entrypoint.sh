@@ -9,13 +9,12 @@ python manage.py migrate --noinput
 echo "[SGE] Coletando estaticos..."
 python manage.py collectstatic --noinput || true
 
-if [ "$SGE_SERVICE" = "worker" ]; then
-  echo "[SGE] Iniciando celery worker na porta $PORT..."
-  exec celery -A app worker -l info --beat --concurrency=1
-elif [ -n "$1" ]; then
+if [ -n "$1" ]; then
   echo "[SGE] Executando: $@"
   exec sh -c "PORT=$PORT $*"
 elif [ "$DJANGO_ENV" = "prd" ]; then
+  echo "[SGE] Iniciando celery worker em background..."
+  celery -A app worker -l info --beat --concurrency=1 &
   echo "[SGE] Iniciando gunicorn na porta $PORT..."
   exec gunicorn app.wsgi:application --bind 0.0.0.0:"$PORT" --workers 2 --timeout 120
 else
