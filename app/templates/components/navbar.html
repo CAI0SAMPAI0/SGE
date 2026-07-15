@@ -35,13 +35,13 @@
                         <i class="feather-sun"></i>
                     </a>
                 </div>
-                <div class="dropdown nxl-h-item">
-                    <a href="javascript:void(0);" data-bs-toggle="dropdown" role="button" data-bs-auto-close="outside" class="c-pointer">
+                <div class="dropdown nxl-h-item" id="userProfileDropdownContainer">
+                    <a href="javascript:void(0);" id="userProfileDropdownTrigger" class="c-pointer" role="button">
                         <div class="avatar-text avatar-sm bg-soft-primary text-primary">
                             <span class="fw-bold">{{ user.first_name|default:user.username|slice:":1"|upper }}</span>
                         </div>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-user-dropdown">
+                    <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-user-dropdown" id="userProfileDropdownMenu">
                         <div class="dropdown-header">
                             <div class="d-flex align-items-center">
                                 <div class="avatar-text avatar-md bg-soft-primary text-primary me-3">
@@ -92,4 +92,33 @@
             body: JSON.stringify({ theme: theme }),
         });
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var trigger = document.getElementById('userProfileDropdownTrigger');
+        var menu = document.getElementById('userProfileDropdownMenu');
+        var container = document.getElementById('userProfileDropdownContainer');
+        if (trigger && menu) {
+            trigger.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var isOpen = menu.classList.contains('show');
+                if (isOpen) {
+                    menu.classList.remove('show');
+                    container.classList.remove('show');
+                    trigger.setAttribute('aria-expanded', 'false');
+                } else {
+                    menu.classList.add('show');
+                    container.classList.add('show');
+                    trigger.setAttribute('aria-expanded', 'true');
+                }
+            });
+            document.addEventListener('click', function (e) {
+                if (!container.contains(e.target)) {
+                    menu.classList.remove('show');
+                    container.classList.remove('show');
+                    trigger.setAttribute('aria-expanded', 'false');
+                }
+            });
+        }
+    });
 </script>
