@@ -192,12 +192,17 @@ USE_TZ = False
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+from whitenoise.storage import CompressedManifestStaticFilesStorage
+
+class SafeCompressedManifestStaticFilesStorage(CompressedManifestStaticFilesStorage):
+    manifest_strict = False
+
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "app.settings.SafeCompressedManifestStaticFilesStorage",
     },
 }
 
@@ -248,6 +253,7 @@ EMAIL_HOST_USER = os.getenv('SMTP_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('SMTP_PASSWORD', '')
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
 DEFAULT_FROM_EMAIL = os.getenv('SMTP_FROM', '')
+EMAIL_TIMEOUT = 5
 
 # Upload
 MEDIA_URL = '/media/'

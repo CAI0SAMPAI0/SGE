@@ -150,7 +150,7 @@ def invite_employee(request):
                 f'Clique no link abaixo para criar sua conta:\n{invite_url}\n\n'
                 f'Atenciosamente,\nEquipe SGE'
             )
-            send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [email])
+            send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [email], fail_silently=True)
             if sent_whatsapp:
                 messages.success(request, f'Convite enviado por WhatsApp e Email para {phone}.')
             else:
