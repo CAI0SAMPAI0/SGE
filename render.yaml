@@ -1,7 +1,7 @@
 services:
   - type: web
     name: sge-web
-    runtime: docker
+    env: docker
     plan: free
     region: oregon
     dockerfilePath: ./Dockerfile
@@ -39,7 +39,7 @@ services:
 
   - type: worker
     name: sge-worker
-    runtime: docker
+    env: docker
     plan: free
     region: oregon
     dockerfilePath: ./Dockerfile
