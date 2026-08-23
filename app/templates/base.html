@@ -56,9 +56,21 @@
         html, body { height: 100%; overflow: hidden; margin: 0; padding: 0; }
         .nxl-container { height: 100vh; overflow: hidden; }
         .nxl-container .nxl-content { height: 100%; overflow: hidden; display: flex; flex-direction: column; }
-        .nxl-container .nxl-content .main-content { flex: 1; overflow-y: auto; min-height: 0; }
+        .nxl-container .nxl-content .main-content { flex: 1; overflow-y: auto; min-height: 0; padding-bottom: 2rem; }
         .nxl-container .nxl-content .page-header,
         .nxl-container .nxl-content ._footer { flex-shrink: 0; }
+
+        /* Ajuste para evitar que cards com tabelas vazem ou cortem o fundo/bordas */
+        .card,
+        .card.stretch,
+        .card.stretch.stretch-full,
+        .stretch.stretch-full {
+            height: auto !important;
+            min-height: auto;
+        }
+        .card .table-responsive {
+            overflow-x: auto;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
